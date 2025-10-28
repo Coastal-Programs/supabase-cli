@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+.next/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+test_output.txt
+.disabled-tests/
+
+# Temporary files
+*.bak
+*.tmp
+tmp/
+
+# Environment
+.env
+.env.development
+.env.test
+.env.production
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local development
+local/
+temp/
+debug.log

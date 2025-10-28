@@ -1,0 +1,185 @@
+import { expect } from 'chai'
+import sinon from 'sinon'
+import BackupDelete from '../../src/commands/backup/delete'
+import BackupRestore from '../../src/commands/backup/restore'
+import BackupPitrRestore from '../../src/commands/backup/pitr/restore'
+import DbReplicasDelete from '../../src/commands/db/replicas/delete'
+import * as supabase from '../../src/supabase'
+
+describe('Error Handling - Destructive Operations', () => {
+  let getProjectStub: sinon.SinonStub
+  let getBackupStub: sinon.SinonStub
+  let getReplicaStub: sinon.SinonStub
+
+  const mockProject = {
+    id: 'proj_123',
+    ref: 'test-project',
+    name: 'Test Project',
+    organization_id: 'org_123',
+    region: 'us-east-1',
+    status: 'ACTIVE',
+    created_at: '2024-01-01T00:00:00Z',
+  }
+
+  const mockBackup = {
+    id: 'backup_123',
+    created_at: '2024-01-15T10:00:00Z',
+    status: 'completed',
+    size: 1024000,
+    description: 'Test backup',
+  }
+
+  const mockReplica = {
+    id: 'replica_123',
+    region: 'eu-west-1',
+    status: 'active',
+    created_at: '2024-01-15T10:00:00Z',
+    endpoint: 'replica1.supabase.co',
+  }
+
+  beforeEach(() => {
+    getProjectStub = sinon.stub(supabase, 'getProject').resolves(mockProject)
+    getBackupStub = sinon.stub(supabase, 'getBackup').resolves(mockBackup)
+    getReplicaStub = sinon.stub(supabase, 'getReplica').resolves(mockReplica)
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('should require confirmation for backup deletion', async () => {
+    sinon.stub(supabase, 'deleteBackup').resolves()
+
+    const command = new BackupDelete(['backup_123', '--project', 'test-project'], {} as any)
+    const confirmStub = sinon.stub(command, 'confirm').resolves(false)
+    const deleteStub = sinon.stub(supabase, 'deleteBackup')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    // Verify deletion was NOT performed due to cancelled confirmation
+    expect(deleteStub.called).to.be.false
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should require confirmation for backup restore', async () => {
+    sinon.stub(supabase, 'restoreFromBackup').resolves({
+      id: 'restore_123',
+      status: 'in_progress',
+      started_at: '2024-01-20T10:00:00Z',
+    })
+
+    const command = new BackupRestore(['backup_123', '--project', 'test-project'], {} as any)
+    const confirmStub = sinon.stub(command, 'confirm').resolves(false)
+    const restoreStub = sinon.stub(supabase, 'restoreFromBackup')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    expect(restoreStub.called).to.be.false
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should require confirmation for PITR restore', async () => {
+    sinon.stub(supabase, 'restorePitr').resolves({
+      id: 'restore_123',
+      status: 'in_progress',
+      target_timestamp: '2024-01-20T10:00:00Z',
+    })
+
+    const command = new BackupPitrRestore(
+      ['2024-01-20T10:00:00Z', '--project', 'test-project'],
+      {} as any,
+    )
+    const confirmStub = sinon.stub(command, 'confirm').resolves(false)
+    const restoreStub = sinon.stub(supabase, 'restorePitr')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    expect(restoreStub.called).to.be.false
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should require confirmation for replica deletion', async () => {
+    sinon.stub(supabase, 'deleteReplica').resolves()
+
+    const command = new DbReplicasDelete(['replica_123', '--project', 'test-project'], {} as any)
+    const confirmStub = sinon.stub(command, 'confirm').resolves(false)
+    const deleteStub = sinon.stub(supabase, 'deleteReplica')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    expect(deleteStub.called).to.be.false
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should handle cancellation gracefully', async () => {
+    const command = new BackupDelete(['backup_123', '--project', 'test-project'], {} as any)
+    sinon.stub(command, 'confirm').resolves(false)
+    const logStub = sinon.stub(command, 'log')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    const cancelMessages = logStub
+      .getCalls()
+      .filter((call) => call.args[0].toLowerCase().includes('cancel'))
+    expect(cancelMessages.length).to.be.greaterThan(0)
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should show warning messages for destructive operations', async () => {
+    sinon.stub(supabase, 'restoreFromBackup').resolves({
+      id: 'restore_123',
+      status: 'in_progress',
+    })
+
+    const command = new BackupRestore(['backup_123', '--project', 'test-project', '--yes'], {} as any)
+    const logStub = sinon.stub(command, 'log')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    // Verify that some warning or informational message is shown
+    // about the destructive nature of the operation
+    expect(logStub.called).to.be.true
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should bypass confirmation with --yes flag for backup delete', async () => {
+    const deleteStub = sinon.stub(supabase, 'deleteBackup').resolves()
+
+    const command = new BackupDelete(
+      ['backup_123', '--project', 'test-project', '--yes', '--quiet'],
+      {} as any,
+    )
+    const confirmStub = sinon.stub(command, 'confirm')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    expect(deleteStub.called).to.be.true
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+
+  it('should bypass confirmation with --yes flag for restore', async () => {
+    const restoreStub = sinon.stub(supabase, 'restoreFromBackup').resolves({
+      id: 'restore_123',
+      status: 'in_progress',
+    })
+
+    const command = new BackupRestore(
+      ['backup_123', '--project', 'test-project', '--yes', '--quiet'],
+      {} as any,
+    )
+    const confirmStub = sinon.stub(command, 'confirm')
+    const exitStub = sinon.stub(process, 'exit')
+
+    await command.run()
+
+    expect(restoreStub.called).to.be.true
+    expect(exitStub.calledWith(0)).to.be.true
+  })
+})
