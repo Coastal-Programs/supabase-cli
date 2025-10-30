@@ -84,7 +84,7 @@
     "eslint": "^9.38.0",
     "eslint-config-oclif": "^5.0.0",
     "eslint-config-oclif-typescript": "^3.0.8",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.1.2",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
