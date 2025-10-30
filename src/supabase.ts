@@ -451,6 +451,34 @@ export interface FunctionInvocation {
   status: number
 }
 
+/**
+ * Validate URL to prevent file:// protocol usage
+ * Security: CodeQL - Addresses file access to HTTP vulnerability
+ */
+function validateUrl(url: string): void {
+  try {
+    const urlObj = new URL(url)
+    
+    // Security: Only allow http and https protocols
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      throw new SupabaseError(
+        'Invalid URL protocol. Only http and https are allowed.',
+        SupabaseErrorCode.CONFIG_ERROR,
+        400,
+      )
+    }
+  } catch (error) {
+    if (error instanceof SupabaseError) {
+      throw error
+    }
+    throw new SupabaseError(
+      'Invalid URL format',
+      SupabaseErrorCode.CONFIG_ERROR,
+      400,
+    )
+  }
+}
+
 // Helper: Get auth headers
 async function getAuthHeader(): Promise<{ Authorization: string }> {
   const token = await getAuthToken()
@@ -467,6 +495,11 @@ async function getAuthHeader(): Promise<{ Authorization: string }> {
 // Helper: Enhanced fetch with retry
 async function enhancedFetch<T>(url: string, options: RequestInit = {}, context = ''): Promise<T> {
   const startTime = Date.now()
+
+
+  // Security: Validate URL before making request
+  // CodeQL: Prevents file:// protocol usage
+  validateUrl(url)
 
   // Add HTTP agent for connection pooling
   const fetchOptions: RequestInit = {

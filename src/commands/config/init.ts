@@ -196,7 +196,8 @@ export default class ConfigInit extends BaseCommand {
         this.log('\n')
       }
 
-      let setupType = 'simple'
+      // Security: Removed useless assignment (CodeQL warning)
+      // setupType is only used if we enter interactive mode
       let scopeType = 'project'
       let selectedProject: any = null
 
@@ -221,7 +222,7 @@ export default class ConfigInit extends BaseCommand {
           },
         ])
 
-        setupType = setupAnswer.setupType
+        const setupType = setupAnswer.setupType
 
         // If simple setup, use 'all' scope to skip project selection
         if (setupType === 'simple') {

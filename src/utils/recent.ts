@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 
 export interface RecentProject {
   ref: string
@@ -61,16 +60,22 @@ function readRecentProjects(): RecentProject[] {
 
 /**
  * Write recent projects to file (atomic write)
+ *
+ * Security: Uses application-specific directory instead of tmpdir()
+ * to prevent security issues with shared temporary directories.
+ * CodeQL: Addresses insecure temporary file vulnerability
  */
 function writeRecentProjects(projects: RecentProject[]): void {
   ensureConfigDir()
 
   try {
-    // Atomic write: write to temp file, then rename
-    const tempFile = join(tmpdir(), `recent-${Date.now()}.json`)
+    // Security: Use application-specific temp file in config directory
+    // instead of system tmpdir() to prevent unauthorized access
+    const tempFile = join(CONFIG_DIR, `.recent-${Date.now()}-${process.pid}.json.tmp`)
     const content = JSON.stringify(projects, null, 2)
 
-    writeFileSync(tempFile, content, 'utf-8')
+    // Write to temp file with restricted permissions (0o600 = owner read/write only)
+    writeFileSync(tempFile, content, { encoding: 'utf-8', mode: 0o600 })
 
     // Rename is atomic on most filesystems
     if (existsSync(RECENT_FILE)) {
@@ -83,6 +88,11 @@ function writeRecentProjects(projects: RecentProject[]): void {
 
     const fs = require('node:fs')
     fs.renameSync(tempFile, RECENT_FILE)
+
+    // Set final file permissions to be restrictive
+    if (process.platform !== 'win32') {
+      fs.chmodSync(RECENT_FILE, 0o600)
+    }
   } catch (error) {
     const err = error as NodeJS.ErrnoException
     throw new Error(`Failed to write recent projects: ${err.message}`)

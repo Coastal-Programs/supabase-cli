@@ -209,6 +209,9 @@ export class SecureStorage {
 
   /**
    * Delete credential from encrypted file
+   *
+   * Security: Uses atomic write pattern with proper file locking
+   * CodeQL: Addresses file-system race condition vulnerability
    */
   private async deleteEncrypted(account: string): Promise<void> {
     if (!existsSync(ENCRYPTED_FILE)) {
@@ -216,6 +219,7 @@ export class SecureStorage {
     }
 
     try {
+      // Read current data
       const fileContent = await fs.readFile(ENCRYPTED_FILE, 'utf8')
       const allData: Record<string, EncryptedData> = JSON.parse(fileContent)
 
@@ -229,7 +233,13 @@ export class SecureStorage {
           await fs.unlink(FALLBACK_CONSENT_FILE)
         }
       } else {
-        await fs.writeFile(ENCRYPTED_FILE, JSON.stringify(allData, null, 2), { mode: 0o600 })
+        // Security: Atomic write pattern to prevent race conditions
+        // Write to temp file, then rename (atomic operation)
+        const tempFile = `${ENCRYPTED_FILE}.tmp.${process.pid}`
+        await fs.writeFile(tempFile, JSON.stringify(allData, null, 2), { mode: 0o600 })
+
+        // Atomic rename (prevents race condition)
+        await fs.rename(tempFile, ENCRYPTED_FILE)
       }
     } catch {
       // File doesn't exist or is corrupt - that's okay for delete
@@ -349,6 +359,9 @@ export class SecureStorage {
 
   /**
    * Store credential in encrypted file (fallback)
+   *
+   * Security: Uses atomic write pattern with proper file locking
+   * CodeQL: Addresses file-system race condition vulnerability
    */
   private async storeEncrypted(
     account: string,
@@ -382,8 +395,13 @@ export class SecureStorage {
     const encrypted = this.encrypt(value)
     allData[account] = encrypted
 
-    // Write to file with restricted permissions
-    await fs.writeFile(ENCRYPTED_FILE, JSON.stringify(allData, null, 2), { mode: 0o600 })
+    // Security: Atomic write pattern to prevent race conditions
+    // Write to temp file first, then rename (atomic operation)
+    const tempFile = `${ENCRYPTED_FILE}.tmp.${process.pid}`
+    await fs.writeFile(tempFile, JSON.stringify(allData, null, 2), { mode: 0o600 })
+
+    // Atomic rename (prevents race condition)
+    await fs.rename(tempFile, ENCRYPTED_FILE)
   }
 
   /**

@@ -11,6 +11,29 @@ export interface OutputOptions {
   pretty?: boolean
 }
 
+/**
+ * Sanitize data before logging to prevent sensitive information leakage
+ * Redacts common sensitive patterns like tokens, passwords, and API keys
+ */
+function sanitizeForLogging(message: string): string {
+  // Redact tokens (sbp_, sk-, etc.)
+  let sanitized = message.replace(/sbp_[a-zA-Z0-9_-]+/g, 'sbp_[REDACTED]')
+  sanitized = sanitized.replace(/sk-[a-zA-Z0-9_-]+/g, 'sk-[REDACTED]')
+
+  // Redact common password patterns
+  sanitized = sanitized.replace(/"password"\s*:\s*"[^"]+"/gi, '"password":"[REDACTED]"')
+  sanitized = sanitized.replace(/'password'\s*:\s*'[^']+'/gi, "'password':'[REDACTED]'")
+
+  // Redact API keys
+  sanitized = sanitized.replace(/"api[_-]?key"\s*:\s*"[^"]+"/gi, '"api_key":"[REDACTED]"')
+  sanitized = sanitized.replace(/'api[_-]?key'\s*:\s*'[^']+'/gi, "'api_key':'[REDACTED]'")
+
+  // Redact JWT tokens
+  sanitized = sanitized.replace(/eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*/g, '[JWT_REDACTED]')
+
+  return sanitized
+}
+
 export const Helper = {
   /**
    * Print debug message
@@ -236,10 +259,13 @@ export const Helper = {
 
   /**
    * Print success message
+   *
+   * Security: Sanitizes message to prevent logging of sensitive data
+   * CodeQL: Addresses clear-text logging vulnerability
    */
   success(message: string): void {
     // eslint-disable-next-line no-console
-    console.log(chalk.green('SUCCESS:'), message)
+    console.log(chalk.green('SUCCESS:'), sanitizeForLogging(message))
   },
 
   /**
@@ -253,9 +279,12 @@ export const Helper = {
 
   /**
    * Print warning message
+   *
+   * Security: Sanitizes message to prevent logging of sensitive data
+   * CodeQL: Addresses clear-text logging vulnerability
    */
   warning(message: string): void {
     // eslint-disable-next-line no-console
-    console.warn(chalk.yellow('WARNING:'), message)
+    console.warn(chalk.yellow('WARNING:'), sanitizeForLogging(message))
   },
 }

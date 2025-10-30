@@ -9,9 +9,9 @@ import { homedir } from 'node:os'
 
 describe('SecureStorage', () => {
   let storage: SecureStorage
-  let keytarStub: sinon.SinonStubbedInstance<typeof keytar>
-  let fsStub: sinon.SinonStubbedInstance<typeof fs>
-  let existsSyncStub: sinon.SinonStub
+  let _keytarStub: sinon.SinonStubbedInstance<typeof keytar>
+  let _fsStub: sinon.SinonStubbedInstance<typeof fs>
+  let _existsSyncStub: sinon.SinonStub
 
   const CONFIG_DIR = path.join(homedir(), '.supabase')
   const ENCRYPTED_FILE = path.join(CONFIG_DIR, 'credentials.enc')
@@ -21,21 +21,21 @@ describe('SecureStorage', () => {
     storage = new SecureStorage()
 
     // Stub keytar methods
-    keytarStub = {
+    _keytarStub = {
       getPassword: sinon.stub(),
       setPassword: sinon.stub(),
       deletePassword: sinon.stub(),
     } as any
 
     // Stub fs methods
-    fsStub = {
+    _fsStub = {
       mkdir: sinon.stub().resolves(),
       readFile: sinon.stub(),
       writeFile: sinon.stub().resolves(),
       unlink: sinon.stub().resolves(),
     } as any
 
-    existsSyncStub = sinon.stub()
+    _existsSyncStub = sinon.stub()
 
     // Replace the real modules with stubs
     sinon.stub(keytar, 'getPassword').callsFake(keytarStub.getPassword)
@@ -126,7 +126,7 @@ describe('SecureStorage', () => {
       // Mock fs operations for store
       const mkdirStub = sinon.stub(fs, 'mkdir').resolves()
       const writeFileStub = sinon.stub(fs, 'writeFile').resolves()
-      const existsSyncStub = sinon.stub().returns(false)
+      const _existsSyncStub = sinon.stub().returns(false)
 
       sinon.replace(storage as any, 'storeInKeychain', sinon.stub().rejects())
       sinon.stub(storage as any, 'encrypt').returns(mockEncryptedData['test-account'])

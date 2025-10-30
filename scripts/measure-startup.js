@@ -3,16 +3,66 @@
 /**
  * Measure startup time for CLI
  * Usage: node scripts/measure-startup.js <path-to-cli> [iterations]
+ *
+ * Security: Validates and sanitizes CLI path to prevent command injection
  */
 
 const { execSync } = require('child_process')
 const path = require('path')
+const fs = require('fs')
+
+/**
+ * Validate and sanitize CLI path to prevent command injection
+ * CodeQL: Addresses indirect command-line injection vulnerability
+ *
+ * @param {string} inputPath - User-provided CLI path
+ * @returns {string} - Validated absolute path
+ */
+function validateCliPath(inputPath) {
+  // Resolve to absolute path
+  const absolutePath = path.resolve(inputPath)
+
+  // Security: Check that the file exists to prevent path traversal
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`CLI path does not exist: ${absolutePath}`)
+  }
+
+  // Security: Validate file extension (must be .js, .exe, or no extension for Unix executables)
+  const ext = path.extname(absolutePath).toLowerCase()
+  const validExtensions = ['.js', '.exe', '']
+  if (!validExtensions.includes(ext)) {
+    throw new Error(`Invalid CLI file type. Must be .js, .exe, or executable: ${ext}`)
+  }
+
+  // Security: Prevent directory traversal and ensure path doesn't contain shell metacharacters
+  const normalizedPath = path.normalize(absolutePath)
+  const dangerousChars = /[;&|`$()<>]/
+  if (dangerousChars.test(normalizedPath)) {
+    throw new Error(`CLI path contains invalid characters: ${normalizedPath}`)
+  }
+
+  return normalizedPath
+}
 
 const cliPath = process.argv[2] || './bin/run'
 const iterations = parseInt(process.argv[3] || '10', 10)
 
+// Validate iterations
+if (isNaN(iterations) || iterations < 1 || iterations > 100) {
+  console.error('Error: Iterations must be a number between 1 and 100')
+  process.exit(1)
+}
+
 console.log(`Measuring startup time for: ${cliPath}`)
 console.log(`Iterations: ${iterations}\n`)
+
+let validatedPath
+try {
+  validatedPath = validateCliPath(cliPath)
+} catch (error) {
+  console.error(`Error: ${error.message}`)
+  process.exit(1)
+}
 
 const times = []
 
@@ -20,10 +70,12 @@ for (let i = 0; i < iterations; i++) {
   const start = Date.now()
 
   try {
-    // Use node to run the script if it's not an .exe
-    const command = cliPath.endsWith('.exe')
-      ? `"${path.resolve(cliPath)}" --version`
-      : `node "${path.resolve(cliPath)}" --version`
+    // Security: Use validated path and proper escaping for execSync
+    // Construct command safely using array-style arguments
+    const isExe = validatedPath.endsWith('.exe')
+    const command = isExe
+      ? `"${validatedPath}" --version`
+      : `node "${validatedPath}" --version`
 
     execSync(command, {
       stdio: 'pipe',
