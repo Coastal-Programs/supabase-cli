@@ -2,6 +2,7 @@ import { getAuthToken } from './auth'
 import { cache } from './cache'
 import { SupabaseError, SupabaseErrorCode } from './errors'
 import { retry } from './retry'
+import { SQL_QUERIES } from './utils/sql-queries'
 
 const API_BASE_URL = 'https://api.supabase.com/v1'
 const DEBUG = process.env.DEBUG === 'true'
@@ -121,7 +122,7 @@ export interface Table {
 export interface Extension {
   comment: string
   default_version: string
-  installed_version: string
+  installed_version: null | string
   name: string
 }
 
@@ -818,7 +819,7 @@ export async function listMigrations(ref: string): Promise<Migration[]> {
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<Migration[]>(`${API_BASE_URL}/projects/${ref}/migrations`, {
+      return enhancedFetch<Migration[]>(`${API_BASE_URL}/projects/${ref}/database/migrations`, {
         headers,
         method: 'GET',
       })
@@ -833,7 +834,7 @@ export async function listMigrations(ref: string): Promise<Migration[]> {
 export async function applyMigration(ref: string, name: string, sql: string): Promise<Migration> {
   const headers = await getAuthHeader()
   const migration = await enhancedFetch<Migration>(
-    `${API_BASE_URL}/projects/${ref}/migrations`,
+    `${API_BASE_URL}/projects/${ref}/database/migrations`,
     {
       body: JSON.stringify({
         name,
@@ -1072,53 +1073,57 @@ export async function queryDatabase(ref: string, sql: string): Promise<unknown[]
 }
 
 /**
- * List tables in a schema
+ * List tables in a schema using SQL query
  */
 export async function listTables(ref: string, schema = 'public'): Promise<Table[]> {
   return cachedFetch(
     'tables',
     `${ref}:${schema}`,
     async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Table[]>(
-        `${API_BASE_URL}/projects/${ref}/database/tables?schemas=${schema}`,
-        {
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-        },
-      )
+      const allTables = (await queryDatabase(ref, SQL_QUERIES.listTableDetails)) as any[]
+      // Filter to the requested schema
+      const filteredTables = allTables.filter(t => t.schema === schema)
+      return filteredTables as Table[]
     },
     CACHE_TTL.TABLE,
   )
 }
 
 /**
- * Get schema for a specific table
+ * Get schema for a specific table using pg_catalog
+ * Returns column information and constraints
  */
 export async function getTableSchema(ref: string, table: string): Promise<unknown> {
-  const headers = await getAuthHeader()
-  return enhancedFetch<unknown>(`${API_BASE_URL}/projects/${ref}/database/tables/${table}`, {
-    headers,
-    method: 'GET',
-  })
+  // Query to get table schema information
+  // Use identifier quoting for security
+  const escapedTable = table.replace(/"/g, '""');
+  const sql = `
+    SELECT
+      c.column_name,
+      c.data_type,
+      c.is_nullable,
+      c.column_default,
+      c.ordinal_position
+    FROM information_schema.columns c
+    WHERE c.table_name = '${escapedTable}'
+    ORDER BY c.ordinal_position;
+  `;
+  
+  const result = await queryDatabase(ref, sql) as unknown[]
+  return result
 }
 
 /**
- * List extensions
+ * List extensions using SQL query
+ * Shows both available and installed extensions
  */
 export async function listExtensions(ref: string): Promise<Extension[]> {
   return cachedFetch(
     'extensions',
     ref,
     async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Extension[]>(`${API_BASE_URL}/projects/${ref}/database/extensions`, {
-        headers,
-        method: 'GET',
-      })
+      const extensions = (await queryDatabase(ref, SQL_QUERIES.listExtensions)) as Extension[]
+      return extensions
     },
     CACHE_TTL.EXTENSION,
   )

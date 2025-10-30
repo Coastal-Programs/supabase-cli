@@ -25,15 +25,16 @@ export const SQL_QUERIES = {
       pg_size_pretty(pg_database_size(current_database())) AS size;
   `,
 
-  // Extensions
+  // Extensions - shows available and installed extensions
   listExtensions: `
     SELECT
-      extname AS name,
-      extversion AS version,
-      nspname AS schema
-    FROM pg_extension e
-    JOIN pg_namespace n ON n.oid = e.extnamespace
-    ORDER BY extname;
+      pae.name,
+      pae.default_version,
+      COALESCE(pe.extversion, NULL) as installed_version,
+      pae.comment
+    FROM pg_available_extensions pae
+    LEFT JOIN pg_extension pe ON pe.extname = pae.name
+    ORDER BY pae.name;
   `,
 
   // RLS Policies
@@ -59,6 +60,39 @@ export const SQL_QUERIES = {
     FROM information_schema.schemata
     WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
     ORDER BY schema_name;
+  `,
+
+  // Tables - detailed information with statistics for listTables function
+  // Note: This query returns all tables across all public/relevant schemas
+  // Schema filtering is done in the listTables function in supabase.ts
+  listTableDetails: `
+    SELECT
+      t.table_schema AS schema,
+      t.table_name AS name,
+      COALESCE(pg_total_relation_size(t.table_schema||'.'||t.table_name), 0) AS bytes,
+      pg_size_pretty(COALESCE(pg_total_relation_size(t.table_schema||'.'||t.table_name), 0)) AS size,
+      COALESCE(s.n_live_tup, 0)::bigint AS live_rows_estimate,
+      COALESCE(s.n_dead_tup, 0)::bigint AS dead_rows_estimate,
+      EXISTS (
+        SELECT 1 FROM pg_policy p
+        JOIN pg_class c ON p.polrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+        WHERE c.relname = t.table_name
+          AND n.nspname = t.table_schema
+      ) AS rls_enabled,
+      CASE
+        WHEN r.relreplident = 'f' THEN 'DEFAULT'
+        WHEN r.relreplident = 'n' THEN 'NOTHING'
+        WHEN r.relreplident = 'i' THEN 'INDEX'
+        WHEN r.relreplident = 'p' THEN 'PRIMARY KEY'
+        ELSE 'DEFAULT'
+      END AS replica_identity,
+      false AS rls_forced
+    FROM information_schema.tables t
+    LEFT JOIN pg_stat_user_tables s ON s.schemaname = t.table_schema AND s.relname = t.table_name
+    LEFT JOIN pg_class r ON r.relname = t.table_name AND r.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = t.table_schema)
+    WHERE t.table_type = 'BASE TABLE' AND t.table_schema NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    ORDER BY t.table_schema, t.table_name;
   `,
 
   // Tables

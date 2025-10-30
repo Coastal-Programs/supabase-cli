@@ -9,6 +9,23 @@ import {
 } from '../../../base-flags'
 import { deleteStorageBucket } from '../../../supabase'
 
+/**
+ * Storage Authentication Limitation
+ *
+ * The Supabase Storage API (`https://{ref}.supabase.co/storage/v1`) requires
+ * a service_role key for authentication, but this CLI uses the Management API
+ * (`https://api.supabase.com/v1`) which uses Personal Access Token (PAT).
+ *
+ * These are DIFFERENT authentication mechanisms:
+ * - Management API (this CLI): Uses PAT from https://supabase.com/dashboard/account/tokens
+ * - Storage API: Requires service_role key from project settings
+ *
+ * Current Implementation: This command uses the Management API endpoint which has
+ * limited storage bucket information. For full storage operations (file uploads,
+ * advanced RLS policies), use the Storage API directly via the Supabase SDK.
+ *
+ * See: docs/STORAGE_AUTHENTICATION_LIMITATION.md
+ */
 export default class StorageBucketsDelete extends BaseCommand {
   static aliases = ['storage:buckets:remove', 'storage:buckets:rm']
 

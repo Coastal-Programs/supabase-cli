@@ -138,6 +138,31 @@ supabase-cli db:query "SELECT version()" --project your-project-ref
 - `storage:buckets:create` - Create a storage bucket
 - `storage:buckets:delete <id>` - Delete a storage bucket
 
+#### Storage Authentication Limitation
+
+The storage commands use the Supabase Management API (PAT-based authentication), not the Storage API (service_role key-based). This means:
+
+- **Full bucket metadata** (creation, deletion, public/private status) is supported
+- **File operations** (upload, download, list files) are NOT supported
+- **Advanced RLS policies** require using the Supabase SDK directly
+
+For file operations and advanced storage management, use the Supabase SDK:
+
+```bash
+# Install the SDK
+npm install @supabase/supabase-js
+
+# Use it in your application
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(PROJECT_URL, SERVICE_ROLE_KEY)
+await supabase.storage
+  .from('bucket-name')
+  .upload('path/to/file.txt', file)
+```
+
+See [docs/STORAGE_AUTHENTICATION_LIMITATION.md](docs/STORAGE_AUTHENTICATION_LIMITATION.md) for detailed technical information.
+
 ### Configuration (6)
 
 - `config:init` - Initialize CLI configuration
@@ -330,6 +355,7 @@ Check the user guides:
 - [API Reference](docs/api/README.md) - API documentation
 - [Developer Guide](CLAUDE.md) - For contributors
 - [Performance Reports](docs/PERFORMANCE_BENCHMARKING_REPORT_PHASE3.md)
+- [Storage Authentication Limitation](docs/STORAGE_AUTHENTICATION_LIMITATION.md) - Technical details on storage API limitations
 
 ## Development
 
