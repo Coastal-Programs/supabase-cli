@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { existsSync, mkdirSync, rmSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -8,7 +8,6 @@ import {
   clearRecentProjects,
   getRecentProjectByIndex,
   getRecentProjects,
-  RecentProject,
 } from '../src/utils/recent'
 
 describe('Recent Projects', () => {

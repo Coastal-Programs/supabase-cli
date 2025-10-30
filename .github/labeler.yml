@@ -1,63 +1,79 @@
-# Automatically label PRs based on changed files
+# Auto-label PRs based on file changes
 
-# Commands
-'area: commands':
-  - 'src/commands/**/*'
+# Documentation
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+  - 'README.md'
+  - 'CHANGELOG.md'
+  - 'CONTRIBUTING.md'
+  - 'SECURITY.md'
 
-'area: database':
-  - 'src/commands/db/**/*'
-
-'area: projects':
-  - 'src/commands/projects/**/*'
-
-'area: backup':
-  - 'src/commands/backup/**/*'
-
-'area: security':
-  - 'src/commands/security/**/*'
-
-'area: functions':
-  - 'src/commands/functions/**/*'
-
-# Infrastructure
-'area: ci/cd':
-  - '.github/**/*'
-
-'area: build':
+# Dependencies
+dependencies:
   - 'package.json'
   - 'package-lock.json'
-  - 'tsconfig*.json'
-  - 'bin/**/*'
+  - 'npm-shrinkwrap.json'
 
-# Core
-'area: core':
+# CI/CD
+ci-cd:
+  - '.github/workflows/**/*'
+  - '.github/actions/**/*'
+
+# Configuration
+configuration:
+  - '*.json'
+  - '*.yml'
+  - '*.yaml'
+  - '.eslintrc*'
+  - '.prettierrc*'
+  - 'tsconfig*.json'
+  - '.mocharc*'
+  - '.nycrc*'
+
+# Tests
+tests:
+  - 'test/**/*'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+
+# Source Code - Commands
+commands:
+  - 'src/commands/**/*'
+
+# Source Code - Utils
+utils:
+  - 'src/utils/**/*'
+
+# Source Code - Core
+core:
+  - 'src/base-*.ts'
   - 'src/supabase.ts'
+  - 'src/auth.ts'
   - 'src/cache.ts'
   - 'src/retry.ts'
   - 'src/errors.ts'
   - 'src/envelope.ts'
-  - 'src/base-command.ts'
+  - 'src/helper.ts'
 
-# Testing
-'area: tests':
-  - 'test/**/*'
+# Database
+database:
+  - 'src/commands/db/**/*'
+  - 'src/commands/migrations/**/*'
+  - 'src/utils/sql-queries.ts'
 
-# Documentation
-'area: docs':
-  - 'docs/**/*'
-  - '*.md'
-  - '!CHANGELOG.md'
+# Security
+security:
+  - 'src/commands/security/**/*'
+  - 'src/utils/secure-storage.ts'
+  - 'src/utils/migrate-credentials.ts'
+  - 'SECURITY.md'
 
-# Configuration
-'area: config':
-  - '*.config.js'
-  - '*.config.ts'
-  - '.eslintrc.json'
-  - '.prettierrc.json'
-  - '.npmignore'
-  - '.gitignore'
+# Build & Scripts
+build:
+  - 'scripts/**/*'
+  - 'bin/**/*'
 
-# Dependencies
-'dependencies':
-  - 'package.json'
-  - 'package-lock.json'
+# Examples
+examples:
+  - 'examples/**/*'
