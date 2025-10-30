@@ -1,12 +1,22 @@
 <div align="center">
-  <img src=".github/supabase-cli-logo.svg" alt="Supabase CLI Logo" width="200"/>
 
-  # @coastal-programs/supabase-cli
-</div>
+```
+███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
+██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
+███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║
+╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║
+███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
+╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝
+```
 
 [![npm version](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli.svg)](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli)
+[![CI/CD Pipeline](https://github.com/Coastal-Programs/supabase-cli/workflows/CI/badge.svg)](https://github.com/Coastal-Programs/supabase-cli/actions)
+[![codecov](https://codecov.io/gh/Coastal-Programs/supabase-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/Coastal-Programs/supabase-cli)
+[![npm](https://img.shields.io/npm/dt/@coastal-programs/supabase-cli.svg)](https://www.npmjs.com/package/@coastal-programs/supabase-cli)
+[![node](https://img.shields.io/node/v/@coastal-programs/supabase-cli.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js CI](https://github.com/coastal-programs/supabase-cli/workflows/Node.js%20CI/badge.svg)](https://github.com/coastal-programs/supabase-cli/actions)
+
+</div>
 
 Production-ready Supabase Management API CLI built for AI agents, automation, and developers. Built with oclif, TypeScript, and enterprise patterns for reliability, performance, and maintainability.
 
