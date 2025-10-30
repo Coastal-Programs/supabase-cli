@@ -1,8 +1,13 @@
-<p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=32&duration=2000&pause=1000&color=3ECF8E&center=true&vCenter=true&width=800&lines=SUPABASE+CLI" alt="Supabase CLI" />
-</p>
-
 <div align="center">
+
+```diff
++███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
++██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
++███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║
++╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║
++███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
++╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝
+```
 
 [![CI/CD Pipeline](https://github.com/Coastal-Programs/supabase-cli/workflows/CI/badge.svg)](https://github.com/Coastal-Programs/supabase-cli/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
