@@ -11,6 +11,8 @@ import { ValidationError } from '../../../errors'
 import { getProject, setDatabaseConfig } from '../../../supabase'
 
 export default class DbConfigSet extends BaseCommand {
+  static aliases = ['db:cfg:set', 'dbset']
+
   static description = 'Set database configuration parameter'
 
   static examples = [

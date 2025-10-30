@@ -6,6 +6,8 @@ import { ErrorMessages, InfoMessages, WarningMessages } from '../../../error-mes
 import { getProject, restoreToPointInTime } from '../../../supabase'
 
 export default class BackupPitrRestore extends BaseCommand {
+  static aliases = ['pitr:restore', 'restore:pitr']
+
   static description = 'Restore project to a specific point in time (PITR - destructive operation)'
 
   static examples = [

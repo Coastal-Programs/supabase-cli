@@ -1,0 +1,44 @@
+[
+  {
+    "command": "supabase-cli",
+    "args": ["projects:list", "--format", "json"],
+    "id": "list-all-projects",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["db:info", "--project", "your-project-ref-1"],
+    "id": "project-1-db-info",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["db:info", "--project", "your-project-ref-2"],
+    "id": "project-2-db-info",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["functions:list", "--project", "your-project-ref-1"],
+    "id": "project-1-functions",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["functions:list", "--project", "your-project-ref-2"],
+    "id": "project-2-functions",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["backup:list", "--project", "your-project-ref-1"],
+    "id": "project-1-backups",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["backup:list", "--project", "your-project-ref-2"],
+    "id": "project-2-backups",
+    "timeout": 30
+  }
+]

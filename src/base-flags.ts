@@ -107,6 +107,17 @@ export const ProjectFlags = {
 }
 
 /**
+ * Recent project flag (use with ProjectFlags)
+ */
+export const RecentFlags = {
+  recent: Flags.integer({
+    char: 'r',
+    description: 'Use recent project by index (1=most recent)',
+    exclusive: ['project', 'project-ref'],
+  }),
+}
+
+/**
  * Common authentication flags
  */
 export const AuthFlags = {
@@ -207,5 +218,21 @@ export const RetryFlags = {
   'no-retry': Flags.boolean({
     default: false,
     description: 'Disable retry on failure',
+  }),
+}
+
+/**
+ * Watch mode flags
+ */
+export const WatchFlags = {
+  interval: Flags.integer({
+    default: 5,
+    dependsOn: ['watch'],
+    description: 'Refresh interval in seconds for watch mode',
+  }),
+  watch: Flags.boolean({
+    char: 'w',
+    default: false,
+    description: 'Watch mode: auto-refresh command output',
   }),
 }

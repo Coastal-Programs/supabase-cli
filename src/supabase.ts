@@ -1,32 +1,53 @@
+import { Agent as HttpAgent } from 'node:http'
+import { Agent as HttpsAgent } from 'node:https'
+
 import { getAuthToken } from './auth'
-import { cache } from './cache'
+import { CACHE_PROFILES, cache } from './cache'
 import { SupabaseError, SupabaseErrorCode } from './errors'
+import { Helper } from './helper'
 import { retry } from './retry'
 import { SQL_QUERIES } from './utils/sql-queries'
 
 const API_BASE_URL = 'https://api.supabase.com/v1'
-const DEBUG = process.env.DEBUG === 'true'
 
-// Cache TTLs (in milliseconds)
+// HTTP connection pooling for better performance
+const httpAgent = new HttpAgent({
+  keepAlive: true,
+  keepAliveMsecs: 30_000, // 30 seconds
+  maxFreeSockets: 5,
+  maxSockets: 10,
+})
+
+const httpsAgent = new HttpsAgent({
+  keepAlive: true,
+  keepAliveMsecs: 30_000, // 30 seconds
+  maxFreeSockets: 5,
+  maxSockets: 10,
+})
+
+// Cache TTLs (in milliseconds) - using CACHE_PROFILES for consistency
 const CACHE_TTL = {
-  AUTH: 600_000, // 10 min
-  BACKUP: 300_000, // 5 min
-  BRANCH: 180_000, // 3 min
-  EXTENSION: 600_000, // 10 min
-  FUNCTION: 300_000, // 5 min
-  INTEGRATION: 600_000, // 10 min
-  LOG: 120_000, // 2 min
-  MIGRATION: 300_000, // 5 min
-  MONITOR: 300_000, // 5 min
-  NETWORK: 300_000, // 5 min
-  ORGANIZATION: 600_000, // 10 min
-  PROJECT: Number.parseInt(process.env.SUPABASE_CLI_CACHE_PROJECT_TTL || '600000', 10), // 10 min
-  REPLICA: 300_000, // 5 min
-  SCHEDULE: 600_000, // 10 min
-  SECRET: 300_000, // 5 min
-  SECURITY: 600_000, // 10 min
-  STORAGE: 300_000, // 5 min
-  TABLE: 300_000, // 5 min
+  AUTH: CACHE_PROFILES.SLOW, // 1 hour - auth tokens rarely change
+  BACKUP: CACHE_PROFILES.MEDIUM, // 5 min - backups change moderately
+  BRANCH: CACHE_PROFILES.FAST, // 30 sec - branches change frequently
+  EXTENSION: CACHE_PROFILES.STATIC, // 24 hours - extensions almost never change
+  FUNCTION: CACHE_PROFILES.MEDIUM, // 5 min - functions change moderately
+  INTEGRATION: CACHE_PROFILES.SLOW, // 1 hour - integrations rarely change
+  LOG: CACHE_PROFILES.FAST, // 30 sec - logs change constantly
+  MIGRATION: CACHE_PROFILES.MEDIUM, // 5 min - migrations change moderately
+  MONITOR: CACHE_PROFILES.FAST, // 30 sec - monitoring data changes frequently
+  NETWORK: CACHE_PROFILES.SLOW, // 1 hour - network settings rarely change
+  ORGANIZATION: CACHE_PROFILES.SLOW, // 1 hour - orgs rarely change
+  PROJECT: Number.parseInt(
+    process.env.SUPABASE_CLI_CACHE_PROJECT_TTL || String(CACHE_PROFILES.SLOW),
+    10,
+  ),
+  REPLICA: CACHE_PROFILES.MEDIUM, // 5 min - replicas change moderately
+  SCHEDULE: CACHE_PROFILES.SLOW, // 1 hour - schedules rarely change
+  SECRET: CACHE_PROFILES.MEDIUM, // 5 min - secrets change moderately
+  SECURITY: CACHE_PROFILES.SLOW, // 1 hour - security settings rarely change
+  STORAGE: CACHE_PROFILES.MEDIUM, // 5 min - storage changes moderately
+  TABLE: CACHE_PROFILES.MEDIUM, // 5 min - tables change moderately
 }
 
 // Type Definitions
@@ -447,8 +468,15 @@ async function getAuthHeader(): Promise<{ Authorization: string }> {
 async function enhancedFetch<T>(url: string, options: RequestInit = {}, context = ''): Promise<T> {
   const startTime = Date.now()
 
+  // Add HTTP agent for connection pooling
+  const fetchOptions: RequestInit = {
+    ...options,
+    // @ts-expect-error - agent is a Node.js-specific option
+    agent: url.startsWith('https:') ? httpsAgent : httpAgent,
+  }
+
   const result = await retry.execute(async () => {
-    const response = await fetch(url, options)
+    const response = await fetch(url, fetchOptions)
 
     // Handle response
     if (!response.ok) {
@@ -482,11 +510,10 @@ async function enhancedFetch<T>(url: string, options: RequestInit = {}, context 
 
   const duration = Date.now() - startTime
 
-  if (DEBUG) {
-    console.log(
-      `[SUPABASE] ${options.method || 'GET'} ${url.replace(API_BASE_URL, '')} (${duration}ms${context ? `, ${context}` : ''})`,
-    )
-  }
+  // Debug mode already logs in retry.execute
+  Helper.debug(
+    `${options.method || 'GET'} ${url.replace(API_BASE_URL, '')} (${duration}ms${context ? `, ${context}` : ''})`,
+  )
 
   return result
 }
@@ -503,10 +530,7 @@ async function cachedFetch<T>(
   // Check cache first
   const cached = cache.get<T>(cacheKey)
   if (cached) {
-    if (DEBUG) {
-      console.log(`[SUPABASE] Cache hit: ${cacheKey}`)
-    }
-
+    Helper.debug(`Cache hit: ${cacheKey}`)
     return cached
   }
 
@@ -514,9 +538,7 @@ async function cachedFetch<T>(
   const data = await fetcher()
   cache.set(cacheKey, data, ttl ?? CACHE_TTL.PROJECT)
 
-  if (DEBUG) {
-    console.log(`[SUPABASE] Cache miss, fetched and cached: ${cacheKey}`)
-  }
+  Helper.debug(`Cache miss, fetched and cached: ${cacheKey}`)
 
   return data
 }
@@ -526,9 +548,7 @@ function invalidateCache(resourceType: string, resourceId: string): void {
   const cacheKey = `${resourceType}:${resourceId}`
   cache.delete(cacheKey)
 
-  if (DEBUG) {
-    console.log(`[SUPABASE] Cache invalidated: ${cacheKey}`)
-  }
+  Helper.debug(`Cache invalidated: ${cacheKey}`)
 }
 
 // Helper: Get project URL for client-side APIs
@@ -973,9 +993,7 @@ export async function invokeFunction(
     }
   })
 
-  if (DEBUG) {
-    console.log(`[SUPABASE] Invoked function ${slug}: status ${response.status}`)
-  }
+  Helper.debug(`Invoked function ${slug}: status ${response.status}`)
 
   return response
 }
@@ -1082,7 +1100,7 @@ export async function listTables(ref: string, schema = 'public'): Promise<Table[
     async () => {
       const allTables = (await queryDatabase(ref, SQL_QUERIES.listTableDetails)) as any[]
       // Filter to the requested schema
-      const filteredTables = allTables.filter(t => t.schema === schema)
+      const filteredTables = allTables.filter((t) => t.schema === schema)
       return filteredTables as Table[]
     },
     CACHE_TTL.TABLE,
@@ -1096,7 +1114,7 @@ export async function listTables(ref: string, schema = 'public'): Promise<Table[
 export async function getTableSchema(ref: string, table: string): Promise<unknown> {
   // Query to get table schema information
   // Use identifier quoting for security
-  const escapedTable = table.replace(/"/g, '""');
+  const escapedTable = table.replaceAll('"', '""')
   const sql = `
     SELECT
       c.column_name,
@@ -1107,9 +1125,9 @@ export async function getTableSchema(ref: string, table: string): Promise<unknow
     FROM information_schema.columns c
     WHERE c.table_name = '${escapedTable}'
     ORDER BY c.ordinal_position;
-  `;
-  
-  const result = await queryDatabase(ref, sql) as unknown[]
+  `
+
+  const result = (await queryDatabase(ref, sql)) as unknown[]
   return result
 }
 
@@ -1181,7 +1199,7 @@ export async function getLogs(
  */
 export async function getErrorLogs(
   ref: string,
-  options?: { limit?: number; severity?: 'error' | 'critical' | 'warning' },
+  options?: { limit?: number; severity?: 'critical' | 'error' | 'warning' },
 ): Promise<ErrorLog[]> {
   const headers = await getAuthHeader()
   let url = `${API_BASE_URL}/projects/${ref}/logs/errors`
@@ -1207,13 +1225,16 @@ export async function getErrorLogs(
  */
 export async function getFunctionLogs(ref: string, functionId: string): Promise<FunctionLog[]> {
   const headers = await getAuthHeader()
-  return enhancedFetch<FunctionLog[]>(`${API_BASE_URL}/projects/${ref}/functions/${functionId}/logs`, {
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
+  return enhancedFetch<FunctionLog[]>(
+    `${API_BASE_URL}/projects/${ref}/functions/${functionId}/logs`,
+    {
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'GET',
     },
-    method: 'GET',
-  })
+  )
 }
 
 /**
@@ -1221,7 +1242,7 @@ export async function getFunctionLogs(ref: string, functionId: string): Promise<
  */
 export async function getAPILogs(
   ref: string,
-  options?: { since?: string; endpoint?: string },
+  options?: { endpoint?: string; since?: string },
 ): Promise<APILog[]> {
   const headers = await getAuthHeader()
   let url = `${API_BASE_URL}/projects/${ref}/logs/api`
@@ -1540,16 +1561,13 @@ export async function listDatabaseReplicas(ref: string): Promise<DatabaseReplica
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<DatabaseReplica[]>(
-        `${API_BASE_URL}/projects/${ref}/database/replicas`,
-        {
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
+      return enhancedFetch<DatabaseReplica[]>(`${API_BASE_URL}/projects/${ref}/database/replicas`, {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
         },
-      )
+        method: 'GET',
+      })
     },
     CACHE_TTL.REPLICA,
   )
@@ -1711,16 +1729,13 @@ export async function listSecurityPolicies(ref: string): Promise<SecurityPolicy[
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<SecurityPolicy[]>(
-        `${API_BASE_URL}/projects/${ref}/security/policies`,
-        {
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
+      return enhancedFetch<SecurityPolicy[]>(`${API_BASE_URL}/projects/${ref}/security/policies`, {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
         },
-      )
+        method: 'GET',
+      })
     },
     CACHE_TTL.SECURITY,
   )

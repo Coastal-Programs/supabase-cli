@@ -9,6 +9,9 @@ build/
 *.tsbuildinfo
 .next/
 
+# Binaries (pkg output)
+binaries/
+
 # IDE
 .vscode/
 .idea/
@@ -58,3 +61,6 @@ Thumbs.db
 local/
 temp/
 debug.log
+
+# Supabase project context (contains project refs)
+.supabase/

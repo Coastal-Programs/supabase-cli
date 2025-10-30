@@ -8,6 +8,7 @@ export enum SupabaseErrorCode {
 
   // Configuration errors
   CONFIG_ERROR = 'CONFIG_ERROR',
+  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
   CONNECTION_ERROR = 'CONNECTION_ERROR',
   // Database errors
   DATABASE_ERROR = 'DATABASE_ERROR',
@@ -32,6 +33,9 @@ export enum SupabaseErrorCode {
   PROJECT_NOT_FOUND = 'PROJECT_NOT_FOUND',
   QUERY_ERROR = 'QUERY_ERROR',
   RATE_LIMIT = 'RATE_LIMIT',
+
+  // Recent projects
+  RECENT_NOT_FOUND = 'RECENT_NOT_FOUND',
 
   // Storage errors
   STORAGE_ERROR = 'STORAGE_ERROR',

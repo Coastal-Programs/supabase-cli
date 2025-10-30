@@ -1,0 +1,26 @@
+[
+  {
+    "command": "supabase-cli",
+    "args": ["--version"],
+    "id": "cli-version-check",
+    "timeout": 10
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["config:doctor"],
+    "id": "config-health-check",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["projects:list", "--format", "json", "--quiet"],
+    "id": "list-all-projects",
+    "timeout": 30
+  },
+  {
+    "command": "supabase-cli",
+    "args": ["recent", "--format", "table"],
+    "id": "show-recent-projects",
+    "timeout": 10
+  }
+]

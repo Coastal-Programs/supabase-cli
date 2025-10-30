@@ -194,7 +194,6 @@ export const ErrorMessages = {
   RESTORE_FAILED: (error: string) =>
     `Restore operation failed: ${error}. This is a critical operation - contact Supabase support if the issue persists.`,
 
-
   SCHEMA_NOT_FOUND: (name: string) =>
     `Database schema '${name}' not found. Run 'supabase-cli db:schemas' to see available schemas.`,
 
@@ -231,6 +230,9 @@ export const SuccessMessages = {
   BACKUP_CREATED: (id: string) => `Backup '${id}' created successfully`,
 
   BACKUP_RESTORED: () => 'Database restored successfully',
+
+  BATCH_OPERATION_COMPLETE: (count: number, type: string) =>
+    `Successfully processed ${count} ${type}${count === 1 ? '' : 's'}`,
 
   CONFIGURATION_SAVED: () => 'Configuration saved successfully',
 

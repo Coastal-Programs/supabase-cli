@@ -18,6 +18,8 @@ interface HealthCheck {
 }
 
 export default class ConfigDoctor extends BaseCommand {
+  static aliases = ['doctor', 'health']
+
   static description = 'Check CLI configuration and environment health'
 
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> config:doctor']
@@ -82,59 +84,74 @@ export default class ConfigDoctor extends BaseCommand {
 
       checks.push(tokenCheck)
 
-      // Check 4: Token Validity (if token exists)
+      // Check 4 & 5: Run token validation and project listing in parallel
       if (token) {
-        try {
-          const isValid = await validateToken(token)
-          const validityCheck: HealthCheck = {
-            name: 'Token Validity',
-            status: isValid ? 'pass' : 'error',
-            value: isValid ? 'Valid' : 'Invalid/Expired',
-          }
+        const [validationResult, projectsResult] = await Promise.all([
+          // Token validation
+          validateToken(token)
+            .then((isValid) => ({ error: null, isValid }))
+            .catch((error) => ({ error, isValid: false })),
+          // Project listing
+          (async () => {
+            try {
+              const startTime = Date.now()
+              const projects = await listProjects()
+              const duration = Date.now() - startTime
+              return { duration, error: null, projects }
+            } catch (error) {
+              return { duration: 0, error, projects: null }
+            }
+          })(),
+        ])
 
-          if (!isValid) {
-            validityCheck.message =
-              'Get new token from: https://supabase.com/dashboard/account/tokens'
-          }
-
-          checks.push(validityCheck)
-        } catch {
+        // Process validation result
+        if (validationResult.error) {
           checks.push({
             message: 'Network error or API unavailable',
             name: 'Token Validity',
             status: 'warning',
             value: 'Could not validate',
           })
+        } else {
+          const validityCheck: HealthCheck = {
+            name: 'Token Validity',
+            status: validationResult.isValid ? 'pass' : 'error',
+            value: validationResult.isValid ? 'Valid' : 'Invalid/Expired',
+          }
+
+          if (!validationResult.isValid) {
+            validityCheck.message =
+              'Get new token from: https://supabase.com/dashboard/account/tokens'
+          }
+
+          checks.push(validityCheck)
         }
-      }
 
-      // Check 5: API Connectivity
-      if (token) {
-        try {
-          const startTime = Date.now()
-          const projects = await listProjects()
-          const duration = Date.now() - startTime
-
-          checks.push(
-            {
-              name: 'API Connectivity',
-              status: 'pass',
-              value: `Connected (${duration}ms)`,
-            },
-            {
-              message: projects.length === 0 ? 'No projects found' : undefined,
-              name: 'Projects Accessible',
-              status: projects.length > 0 ? 'pass' : 'warning',
-              value: `${projects.length} project${projects.length === 1 ? '' : 's'}`,
-            },
-          )
-        } catch (error) {
+        // Process projects result
+        if (projectsResult.error) {
           checks.push({
-            message: error instanceof Error ? error.message : 'Unknown error',
+            message:
+              projectsResult.error instanceof Error
+                ? projectsResult.error.message
+                : 'Unknown error',
             name: 'API Connectivity',
             status: 'error',
             value: 'Failed',
           })
+        } else if (projectsResult.projects !== null) {
+          checks.push(
+            {
+              name: 'API Connectivity',
+              status: 'pass',
+              value: `Connected (${projectsResult.duration}ms)`,
+            },
+            {
+              message: projectsResult.projects.length === 0 ? 'No projects found' : undefined,
+              name: 'Projects Accessible',
+              status: projectsResult.projects.length > 0 ? 'pass' : 'warning',
+              value: `${projectsResult.projects.length} project${projectsResult.projects.length === 1 ? '' : 's'}`,
+            },
+          )
         }
       } else {
         checks.push({

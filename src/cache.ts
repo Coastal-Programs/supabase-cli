@@ -1,5 +1,19 @@
 import QuickLRU from 'quick-lru'
 
+/**
+ * Cache TTL profiles for different data types
+ */
+export const CACHE_PROFILES = {
+  /** 30 seconds - frequently changing data (connections, real-time metrics) */
+  FAST: 30_000,
+  /** 5 minutes - moderately changing data (project info, database stats) */
+  MEDIUM: 300_000,
+  /** 1 hour - rarely changing data (extensions, regions, plans) */
+  SLOW: 3_600_000,
+  /** 24 hours - almost never changes (API schema, supported features) */
+  STATIC: 86_400_000,
+} as const
+
 export interface CacheOptions {
   enabled?: boolean // Whether caching is enabled
   maxSize?: number // Maximum number of items in cache

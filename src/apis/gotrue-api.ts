@@ -11,8 +11,6 @@
 import { SupabaseError } from '../errors'
 import { retry } from '../retry'
 
-const DEBUG = process.env.DEBUG === 'true'
-
 /**
  * Auth settings response from GoTrue /settings endpoint
  */
@@ -98,10 +96,7 @@ export class GoTrueAPI {
 
       const data = (await response.json()) as AuthSettings
 
-      if (DEBUG) {
-        console.log('[GoTrueAPI] Settings fetched successfully')
-      }
-
+      // Debug logging is handled by retry.execute wrapper
       return data
     })
   }
@@ -126,10 +121,7 @@ export class GoTrueAPI {
     // Sort by name for consistent output
     providers.sort((a, b) => a.name.localeCompare(b.name))
 
-    if (DEBUG) {
-      console.log(`[GoTrueAPI] Listed ${providers.length} providers`)
-    }
-
+    // Debug logging is handled by retry.execute wrapper
     return providers
   }
 

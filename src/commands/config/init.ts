@@ -11,6 +11,8 @@ import { SupabaseError, SupabaseErrorCode } from '../../errors'
 import { listProjects } from '../../supabase'
 
 export default class ConfigInit extends BaseCommand {
+  static aliases = ['init', 'configure']
+
   static description = 'Initialize CLI configuration and validate credentials'
 
   static examples = [
@@ -221,7 +223,10 @@ export default class ConfigInit extends BaseCommand {
 
         setupType = setupAnswer.setupType
 
-        if (setupType === 'advanced') {
+        // If simple setup, use 'all' scope to skip project selection
+        if (setupType === 'simple') {
+          scopeType = 'all'
+        } else if (setupType === 'advanced') {
           const scopeAnswer = await inquirer.default.prompt([
             {
               choices: [

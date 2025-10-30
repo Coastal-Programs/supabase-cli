@@ -38,6 +38,10 @@
   ],
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
+    "build:binary": "npm run build && pkg . --out-path binaries",
+    "build:binary:win": "npm run build && pkg . --targets node18-win-x64 --out-path binaries",
+    "build:binary:mac": "npm run build && pkg . --targets node18-macos-x64 --out-path binaries",
+    "build:binary:linux": "npm run build && pkg . --targets node18-linux-x64 --out-path binaries",
     "lint": "eslint . --ext .ts --config .eslintrc.json",
     "lint:fix": "eslint . --ext .ts --config .eslintrc.json --fix",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -50,6 +54,7 @@
     "test:coverage": "nyc --reporter=lcov --reporter=text --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "test:performance": "mocha --timeout 120000 \"test/performance/**/*.test.ts\"",
     "test:performance:quick": "mocha --timeout 60000 \"test/performance/benchmarks.test.ts\"",
+    "test:daemon": "mocha --timeout 30000 \"test/daemon/**/*.test.ts\"",
     "test:watch": "mocha --watch --watch-extensions ts --require ts-node/register \"test/**/*.test.ts\"",
     "test:examples": "bash scripts/test-examples.sh",
     "version": "oclif readme && git add README.md",
@@ -61,17 +66,20 @@
   },
   "dependencies": {
     "@oclif/core": "^2.15.0",
+    "@oclif/plugin-autocomplete": "^3.2.38",
     "@oclif/plugin-help": "^6.2.34",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.3",
     "dayjs": "^1.11.10",
     "inquirer": "^8.2.6",
+    "keytar": "^7.9.0",
     "ora": "^5.4.1",
     "quick-lru": "^7.3.0"
   },
   "devDependencies": {
     "@oclif/test": "^2.5.6",
     "@types/chai": "^4.3.11",
+    "@types/cli-progress": "^3.11.6",
     "@types/inquirer": "^8.2.10",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.6",
@@ -81,6 +89,7 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chai": "^4.3.10",
+    "cli-progress": "^3.12.0",
     "eslint": "^8.57.1",
     "eslint-config-oclif": "^5.0.0",
     "eslint-config-oclif-typescript": "^3.0.8",
@@ -89,17 +98,43 @@
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "oclif": "^4.22.38",
+    "pkg": "^5.8.1",
     "prettier": "^3.1.1",
     "shx": "^0.4.0",
     "sinon": "^17.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
+  "pkg": {
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64",
+      "node18-linux-x64"
+    ],
+    "outputPath": "binaries",
+    "assets": [
+      "dist/**/*",
+      "node_modules/@oclif/**/*",
+      "node_modules/chalk/**/*",
+      "node_modules/cli-table3/**/*",
+      "node_modules/dayjs/**/*",
+      "node_modules/inquirer/**/*",
+      "node_modules/ora/**/*",
+      "node_modules/quick-lru/**/*"
+    ],
+    "scripts": [
+      "dist/**/*.js",
+      "node_modules/@oclif/**/*.js"
+    ]
+  },
   "oclif": {
     "bin": "supabase-cli",
     "dirname": "supabase-cli",
     "commands": "./dist/commands",
-    "plugins": [],
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-autocomplete"
+    ],
     "topicSeparator": ":",
     "topics": {
       "projects": {
@@ -128,6 +163,9 @@
       },
       "config": {
         "description": "CLI configuration"
+      },
+      "daemon": {
+        "description": "Daemon mode for 10x faster execution"
       }
     },
     "hooks": {}

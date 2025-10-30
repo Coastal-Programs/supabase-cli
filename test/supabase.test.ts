@@ -955,7 +955,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        await supabaseModule.deleteBranch('branch-id')
+        await supabaseModule.deleteBranch('test-ref', 'branch-id')
 
         expect(fetchStub.calledOnce).to.be.true
       })
@@ -969,7 +969,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        await supabaseModule.mergeBranch('branch-id')
+        await supabaseModule.mergeBranch('test-ref', 'branch-id')
 
         const call = fetchStub.firstCall
         expect(call.args[0]).to.include('/merge')
@@ -985,7 +985,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        await supabaseModule.resetBranch('branch-id')
+        await supabaseModule.resetBranch('test-ref', 'branch-id')
 
         const call = fetchStub.firstCall
         expect(call.args[0]).to.include('/reset')
@@ -1015,7 +1015,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        await supabaseModule.rebaseBranch('branch-id')
+        await supabaseModule.rebaseBranch('test-ref', 'branch-id')
 
         const call = fetchStub.firstCall
         expect(call.args[0]).to.include('/rebase')
@@ -1113,7 +1113,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        const result = await supabaseModule.getLogs('test-ref', 'api')
+        const result = await supabaseModule.getLogs('test-ref', 'database')
 
         expect(result).to.be.an('array')
         expect(result).to.have.length(2)
@@ -1128,7 +1128,7 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        const result = await supabaseModule.getLogs('test-ref', 'postgres')
+        const result = await supabaseModule.getLogs('test-ref', 'database')
 
         expect(result).to.be.an('array')
         expect(result).to.have.length(0)

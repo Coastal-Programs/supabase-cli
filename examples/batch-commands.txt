@@ -1,0 +1,17 @@
+# Simple batch command file
+# One command per line
+# Lines starting with # are comments
+
+# List all projects
+supabase-cli projects:list --format json
+
+# Get recent projects
+supabase-cli recent --format table
+
+# Show help for various commands
+supabase-cli db:info --help
+supabase-cli functions:list --help
+supabase-cli backup:list --help
+
+# Check configuration
+supabase-cli config:get --format json
