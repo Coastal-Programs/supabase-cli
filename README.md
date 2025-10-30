@@ -1,20 +1,13 @@
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=32&duration=2000&pause=1000&color=3ECF8E&center=true&vCenter=true&width=800&lines=SUPABASE+CLI" alt="Supabase CLI" />
+</p>
+
 <div align="center">
 
-```
-███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
-██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
-███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║
-╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║
-███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
-╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝
-```
-
-[![npm version](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli.svg)](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli)
 [![CI/CD Pipeline](https://github.com/Coastal-Programs/supabase-cli/workflows/CI/badge.svg)](https://github.com/Coastal-Programs/supabase-cli/actions)
-[![codecov](https://codecov.io/gh/Coastal-Programs/supabase-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/Coastal-Programs/supabase-cli)
-[![npm](https://img.shields.io/npm/dt/@coastal-programs/supabase-cli.svg)](https://www.npmjs.com/package/@coastal-programs/supabase-cli)
-[![node](https://img.shields.io/node/v/@coastal-programs/supabase-cli.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue)](https://www.typescriptlang.org/)
 
 </div>
 
