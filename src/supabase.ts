@@ -417,6 +417,12 @@ export interface SecurityFinding {
   title: string
 }
 
+// Phase 5B Types - API Keys & Configuration
+export interface APIKeysResponse {
+  anon: string
+  service_role: string
+}
+
 // Helper: Get auth headers
 async function getAuthHeader(): Promise<{ Authorization: string }> {
   const token = await getAuthToken()
@@ -1542,6 +1548,29 @@ export async function getAuthServiceConfig(ref: string): Promise<AuthServiceConf
       })
     },
     CACHE_TTL.AUTH,
+  )
+}
+
+/**
+ * Get API keys for a project
+ * WARNING: Returns sensitive credentials (anon and service_role keys)
+ * Phase 5B: Added for GoTrue API integration
+ */
+export async function getAPIKeys(ref: string): Promise<APIKeysResponse> {
+  return cachedFetch(
+    'api-keys',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      return enhancedFetch<APIKeysResponse>(`${API_BASE_URL}/projects/${ref}/api-keys`, {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.AUTH, // 10 min
   )
 }
 

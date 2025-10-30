@@ -1,0 +1,63 @@
+# Automatically label PRs based on changed files
+
+# Commands
+'area: commands':
+  - 'src/commands/**/*'
+
+'area: database':
+  - 'src/commands/db/**/*'
+
+'area: projects':
+  - 'src/commands/projects/**/*'
+
+'area: backup':
+  - 'src/commands/backup/**/*'
+
+'area: security':
+  - 'src/commands/security/**/*'
+
+'area: functions':
+  - 'src/commands/functions/**/*'
+
+# Infrastructure
+'area: ci/cd':
+  - '.github/**/*'
+
+'area: build':
+  - 'package.json'
+  - 'package-lock.json'
+  - 'tsconfig*.json'
+  - 'bin/**/*'
+
+# Core
+'area: core':
+  - 'src/supabase.ts'
+  - 'src/cache.ts'
+  - 'src/retry.ts'
+  - 'src/errors.ts'
+  - 'src/envelope.ts'
+  - 'src/base-command.ts'
+
+# Testing
+'area: tests':
+  - 'test/**/*'
+
+# Documentation
+'area: docs':
+  - 'docs/**/*'
+  - '*.md'
+  - '!CHANGELOG.md'
+
+# Configuration
+'area: config':
+  - '*.config.js'
+  - '*.config.ts'
+  - '.eslintrc.json'
+  - '.prettierrc.json'
+  - '.npmignore'
+  - '.gitignore'
+
+# Dependencies
+'dependencies':
+  - 'package.json'
+  - 'package-lock.json'

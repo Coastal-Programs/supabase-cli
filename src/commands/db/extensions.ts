@@ -2,6 +2,7 @@ import { Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, InfoMessages } from '../../error-messages'
 import { Extension, listExtensions } from '../../supabase'
 
 export default class DbExtensions extends BaseCommand {
@@ -10,11 +11,10 @@ export default class DbExtensions extends BaseCommand {
   static description = 'List database extensions'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --project my-project-ref',
-    '<%= config.bin %> <%= command.id %> --enabled',
-    '<%= config.bin %> <%= command.id %> --format table',
-    '<%= config.bin %> <%= command.id %> --enabled --format list',
+    '<%= config.bin %> <%= command.id %> --project my-project-ref --enabled',
+    '<%= config.bin %> <%= command.id %> -p my-project-ref --format table',
+    '<%= config.bin %> <%= command.id %> -p my-project-ref --enabled --format list',
   ]
 
   static flags = {
@@ -37,10 +37,12 @@ export default class DbExtensions extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      if (!flags.quiet) {
+        const title = flags.enabled ? 'Enabled Database Extensions' : 'Database Extensions'
+        this.header(title)
       }
 
       // Fetch extensions
@@ -56,12 +58,21 @@ export default class DbExtensions extends BaseCommand {
         extensions = allExtensions.filter((ext: Extension) => ext.installed_version !== null)
       }
 
-      // Output results
-      if (!flags.quiet) {
-        const title = flags.enabled ? 'Enabled Database Extensions' : 'Database Extensions'
-        this.header(title)
+      // Check for empty results
+      if (extensions.length === 0) {
+        if (!flags.quiet) {
+          this.warning(
+            flags.enabled
+              ? InfoMessages.NO_RESULTS('enabled extensions')
+              : InfoMessages.NO_RESULTS('extensions'),
+          )
+        }
+
+        this.output([])
+        process.exit(0)
       }
 
+      // Output results
       this.output(extensions)
 
       if (!flags.quiet) {
@@ -73,11 +84,10 @@ export default class DbExtensions extends BaseCommand {
         const totalCount = allExtensions.length
 
         if (flags.enabled) {
-          this.info(`Total: ${extensions.length} enabled extension(s)`)
+          this.info(InfoMessages.RESULTS_COUNT(extensions.length, 'enabled extension'))
         } else {
-          this.info(
-            `Total: ${totalCount} extension(s) (${enabledCount} enabled, ${totalCount - enabledCount} available)`,
-          )
+          this.info(InfoMessages.RESULTS_COUNT(totalCount, 'extension'))
+          this.info(`Enabled: ${enabledCount} | Available: ${totalCount - enabledCount}`)
         }
       }
 

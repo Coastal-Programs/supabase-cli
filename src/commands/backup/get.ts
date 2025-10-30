@@ -2,6 +2,7 @@ import { Args } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages } from '../../error-messages'
 import { getBackup, getProject } from '../../supabase'
 
 export default class BackupGet extends BaseCommand {
@@ -31,14 +32,14 @@ export default class BackupGet extends BaseCommand {
 
     try {
       // Validate project reference
-      const projectRef = flags.project || flags['project-ref']
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
+
       if (!projectRef) {
-        this.error(
-          'Project reference is required. Use --project flag or set SUPABASE_PROJECT_ID.',
-          {
-            exit: 1,
-          },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      if (!flags.quiet) {
+        this.header('Backup Details')
       }
 
       // Verify project exists
@@ -46,22 +47,22 @@ export default class BackupGet extends BaseCommand {
 
       // Fetch backup details
       const backup = await this.spinner(
-        'Fetching backup details...',
+        `Fetching backup ${args.backupId}...`,
         async () => getBackup(projectRef, args.backupId),
         'Backup details fetched successfully',
       )
 
       // Output results
-      if (!flags.quiet) {
-        this.header(`Backup: ${backup.id}`)
-      }
-
       this.output(backup)
 
       if (!flags.quiet) {
         this.divider()
-        this.success(`Status: ${backup.status}`)
+        this.info(`Backup ID: ${backup.id}`)
+        this.info(`Status: ${backup.status}`)
         this.info(`Size: ${backup.size_formatted}`)
+        if (backup.created_at) {
+          this.info(`Created: ${backup.created_at}`)
+        }
         if (backup.expires_at) {
           this.info(`Expires: ${backup.expires_at}`)
         }

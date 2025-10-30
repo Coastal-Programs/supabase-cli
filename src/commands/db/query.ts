@@ -2,6 +2,7 @@ import { Args } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, InfoMessages, SuccessMessages } from '../../error-messages'
 import { queryDatabase } from '../../supabase'
 
 export default class DbQuery extends BaseCommand {
@@ -17,10 +18,9 @@ export default class DbQuery extends BaseCommand {
   static description = 'Execute SQL query against database'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> "SELECT * FROM users LIMIT 10"',
-    '<%= config.bin %> <%= command.id %> "SELECT * FROM users" --project my-project-ref',
-    '<%= config.bin %> <%= command.id %> "SELECT COUNT(*) FROM orders" --format table',
-    '<%= config.bin %> <%= command.id %> "SHOW TABLES" --format yaml',
+    '<%= config.bin %> <%= command.id %> "SELECT * FROM users LIMIT 10" --project my-project-ref',
+    '<%= config.bin %> <%= command.id %> "SELECT COUNT(*) FROM orders" --project my-project-ref --format table',
+    '<%= config.bin %> <%= command.id %> "SHOW TABLES" -p my-project-ref --format yaml',
   ]
 
   static flags = {
@@ -38,37 +38,36 @@ export default class DbQuery extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      if (!flags.quiet) {
+        this.header('Execute SQL Query')
+        this.info(`Project: ${projectRef}`)
+        this.divider()
       }
 
       // Execute query
       const results = await this.spinner(
         'Executing query...',
         async () => queryDatabase(projectRef, args.sql),
-        'Query executed successfully',
+        SuccessMessages.QUERY_EXECUTED(),
       )
 
       // Output results
-      if (!flags.quiet) {
-        this.header('Query Results')
-      }
-
       if (Array.isArray(results) && results.length > 0) {
         this.output(results)
 
         if (!flags.quiet) {
           this.divider()
-          this.info(`Returned ${results.length} row(s)`)
+          this.info(InfoMessages.RESULTS_COUNT(results.length, 'row'))
         }
       } else if (Array.isArray(results) && results.length === 0) {
-        if (flags.quiet) {
-          this.output([])
-        } else {
-          this.info('Query returned no results')
+        if (!flags.quiet) {
+          this.warning(InfoMessages.NO_RESULTS('rows'))
         }
+
+        this.output([])
       } else {
         this.output(results)
       }

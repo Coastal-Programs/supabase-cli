@@ -1,0 +1,1082 @@
+{
+  "version": "0.1.0",
+  "generated_at": "2024-10-29T00:00:00Z",
+  "command_count": 67,
+  "categories": [
+    "auth",
+    "backup",
+    "branches",
+    "config",
+    "db",
+    "functions",
+    "integrations",
+    "logs",
+    "migrations",
+    "monitor",
+    "projects",
+    "security",
+    "storage"
+  ],
+  "commands": [
+    {
+      "name": "projects:list",
+      "category": "projects",
+      "action": "list",
+      "description": "List all Supabase projects in your account",
+      "usage": "supabase-cli projects:list [flags]",
+      "flags": [
+        {"name": "--format", "type": "string", "values": ["json", "table", "yaml"], "default": "json", "description": "Output format"},
+        {"name": "--no-color", "type": "boolean", "description": "Disable colored output"},
+        {"name": "--debug", "type": "boolean", "description": "Enable debug output"}
+      ],
+      "output": {"type": "array", "schema": "Project[]"},
+      "examples": [
+        {"command": "supabase-cli projects:list --format json", "description": "List all projects as JSON"},
+        {"command": "supabase-cli projects:list --format table", "description": "Display projects in table format"}
+      ],
+      "ai_hints": {
+        "common_use": "Getting list of available projects to work with",
+        "typical_next": ["projects:get", "backup:list", "db:query"],
+        "performance": "< 2s with cache, < 5s without",
+        "cache_ttl": "5 minutes"
+      }
+    },
+    {
+      "name": "projects:get",
+      "category": "projects",
+      "action": "get",
+      "description": "Get details of a specific Supabase project",
+      "usage": "supabase-cli projects:get <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true, "description": "Project reference ID"}],
+      "flags": [
+        {"name": "--format", "type": "string", "values": ["json", "table", "yaml"], "default": "json"}
+      ],
+      "output": {"type": "object", "schema": "Project"},
+      "examples": [
+        {"command": "supabase-cli projects:get abc123xyz", "description": "Get project details"}
+      ],
+      "ai_hints": {
+        "common_use": "Inspecting specific project configuration and status",
+        "typical_next": ["db:query", "backup:create", "functions:list"],
+        "performance": "< 2s",
+        "cache_ttl": "5 minutes"
+      }
+    },
+    {
+      "name": "projects:create",
+      "category": "projects",
+      "action": "create",
+      "description": "Create a new Supabase project",
+      "usage": "supabase-cli projects:create [flags]",
+      "flags": [
+        {"name": "--name", "type": "string", "required": true, "description": "Project name"},
+        {"name": "--organization", "type": "string", "required": true, "description": "Organization ID"},
+        {"name": "--region", "type": "string", "required": true, "values": ["us-east-1", "us-west-1", "eu-west-1", "ap-southeast-1"], "description": "AWS region"}
+      ],
+      "output": {"type": "object", "schema": "Project"},
+      "examples": [
+        {"command": "supabase-cli projects:create --name 'My Project' --organization org-id --region us-east-1", "description": "Create new project"}
+      ],
+      "ai_hints": {
+        "common_use": "Provisioning new Supabase infrastructure",
+        "typical_next": ["projects:get", "db:query"],
+        "performance": "60-180s (long-running)",
+        "show_progress": true
+      }
+    },
+    {
+      "name": "projects:delete",
+      "category": "projects",
+      "action": "delete",
+      "description": "Delete a Supabase project (DESTRUCTIVE)",
+      "usage": "supabase-cli projects:delete <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--yes", "type": "boolean", "description": "Skip confirmation prompt"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Removing unused projects",
+        "warning": "DESTRUCTIVE - All data will be permanently deleted",
+        "requires_confirmation": true,
+        "typical_next": ["projects:list"],
+        "performance": "< 10s"
+      }
+    },
+    {
+      "name": "projects:pause",
+      "category": "projects",
+      "action": "pause",
+      "description": "Pause a Supabase project",
+      "usage": "supabase-cli projects:pause <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--yes", "type": "boolean", "description": "Skip confirmation"}
+      ],
+      "ai_hints": {
+        "common_use": "Temporarily stopping project to save costs",
+        "typical_next": ["projects:list", "projects:get"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "backup:list",
+      "category": "backup",
+      "action": "list",
+      "description": "List all backups for a project",
+      "usage": "supabase-cli backup:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--format", "type": "string", "values": ["json", "table"]}
+      ],
+      "output": {"type": "array", "schema": "Backup[]"},
+      "ai_hints": {
+        "common_use": "Viewing available backups for restore operations",
+        "typical_next": ["backup:get", "backup:restore"],
+        "performance": "< 3s",
+        "cache_ttl": "5 minutes"
+      }
+    },
+    {
+      "name": "backup:get",
+      "category": "backup",
+      "action": "get",
+      "description": "Get details of a specific backup",
+      "usage": "supabase-cli backup:get <project-ref> <backup-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "backup-id", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Verifying backup details before restore",
+        "typical_next": ["backup:restore"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "backup:create",
+      "category": "backup",
+      "action": "create",
+      "description": "Create a manual database backup",
+      "usage": "supabase-cli backup:create <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--description", "type": "string", "description": "Backup description"},
+        {"name": "--format", "type": "string"}
+      ],
+      "output": {"type": "object", "fields": ["backup_id", "created_at", "status"]},
+      "ai_hints": {
+        "common_use": "Creating backup before destructive operations",
+        "typical_next": ["backup:list", "backup:get"],
+        "performance": "15-60s (depends on database size)",
+        "show_progress": true,
+        "best_practice": "Always create backup before major changes"
+      }
+    },
+    {
+      "name": "backup:delete",
+      "category": "backup",
+      "action": "delete",
+      "description": "Delete a backup (DESTRUCTIVE)",
+      "usage": "supabase-cli backup:delete <project-ref> <backup-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "backup-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean", "description": "Skip confirmation"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Cleaning up old backups",
+        "warning": "DESTRUCTIVE - Backup cannot be recovered",
+        "requires_confirmation": true,
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "backup:restore",
+      "category": "backup",
+      "action": "restore",
+      "description": "Restore database from backup (DESTRUCTIVE)",
+      "usage": "supabase-cli backup:restore <project-ref> <backup-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "backup-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean", "description": "Skip confirmation"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Recovering database from backup",
+        "warning": "DESTRUCTIVE - Current database will be replaced",
+        "requires_confirmation": true,
+        "performance": "30-120s",
+        "show_progress": true,
+        "best_practice": "Create current backup before restoring"
+      }
+    },
+    {
+      "name": "backup:schedule:list",
+      "category": "backup",
+      "action": "list",
+      "description": "List backup schedules",
+      "usage": "supabase-cli backup:schedule:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing automated backup configuration",
+        "typical_next": ["backup:schedule:create"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "backup:schedule:create",
+      "category": "backup",
+      "action": "create",
+      "description": "Create automated backup schedule",
+      "usage": "supabase-cli backup:schedule:create <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--frequency", "type": "string", "values": ["daily", "weekly"], "required": true},
+        {"name": "--retention", "type": "number", "description": "Retention days"}
+      ],
+      "ai_hints": {
+        "common_use": "Setting up automated backups",
+        "typical_next": ["backup:schedule:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "backup:pitr:restore",
+      "category": "backup",
+      "action": "restore",
+      "description": "Point-in-time recovery (DESTRUCTIVE)",
+      "usage": "supabase-cli backup:pitr:restore <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--timestamp", "type": "string", "required": true, "description": "ISO timestamp"},
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Restoring database to specific point in time",
+        "warning": "DESTRUCTIVE - Requires PITR enabled",
+        "requires_confirmation": true,
+        "performance": "30-120s",
+        "show_progress": true
+      }
+    },
+    {
+      "name": "db:query",
+      "category": "db",
+      "action": "query",
+      "description": "Execute SQL query on database",
+      "usage": "supabase-cli db:query <project-ref> <query> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "query", "required": true, "description": "SQL query to execute"}
+      ],
+      "flags": [
+        {"name": "--format", "type": "string"}
+      ],
+      "ai_hints": {
+        "common_use": "Running SQL queries for data inspection or manipulation",
+        "typical_next": ["db:query"],
+        "performance": "Depends on query complexity",
+        "best_practice": "Use SELECT for read operations, be careful with UPDATE/DELETE"
+      }
+    },
+    {
+      "name": "db:schema",
+      "category": "db",
+      "action": "schema",
+      "description": "View database schema",
+      "usage": "supabase-cli db:schema <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Understanding database structure",
+        "typical_next": ["db:query", "migrations:apply"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "db:extensions",
+      "category": "db",
+      "action": "extensions",
+      "description": "List database extensions",
+      "usage": "supabase-cli db:extensions <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing available PostgreSQL extensions",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "db:replicas:list",
+      "category": "db",
+      "action": "list",
+      "description": "List read replicas",
+      "usage": "supabase-cli db:replicas:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing read replica configuration",
+        "typical_next": ["db:replicas:create"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "db:replicas:create",
+      "category": "db",
+      "action": "create",
+      "description": "Create read replica",
+      "usage": "supabase-cli db:replicas:create <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--region", "type": "string", "required": true, "description": "Replica region"}
+      ],
+      "ai_hints": {
+        "common_use": "Scaling read operations geographically",
+        "typical_next": ["db:replicas:list"],
+        "performance": "30-90s",
+        "show_progress": true
+      }
+    },
+    {
+      "name": "db:replicas:delete",
+      "category": "db",
+      "action": "delete",
+      "description": "Delete read replica (DESTRUCTIVE)",
+      "usage": "supabase-cli db:replicas:delete <project-ref> <replica-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "replica-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Removing unused replicas",
+        "warning": "DESTRUCTIVE - Replica will be permanently deleted",
+        "requires_confirmation": true,
+        "performance": "< 10s"
+      }
+    },
+    {
+      "name": "db:config:set",
+      "category": "db",
+      "action": "set",
+      "description": "Set database configuration",
+      "usage": "supabase-cli db:config:set <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--setting", "type": "string", "required": true},
+        {"name": "--value", "type": "string", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Configuring database parameters",
+        "typical_next": ["db:query"],
+        "performance": "< 5s",
+        "best_practice": "Understand setting impact before changing"
+      }
+    },
+    {
+      "name": "functions:list",
+      "category": "functions",
+      "action": "list",
+      "description": "List edge functions",
+      "usage": "supabase-cli functions:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing deployed functions",
+        "typical_next": ["functions:invoke", "functions:deploy"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "functions:deploy",
+      "category": "functions",
+      "action": "deploy",
+      "description": "Deploy edge function",
+      "usage": "supabase-cli functions:deploy <project-ref> <function-name> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "function-name", "required": true}
+      ],
+      "flags": [
+        {"name": "--file", "type": "string", "required": true, "description": "Function file path"}
+      ],
+      "ai_hints": {
+        "common_use": "Deploying serverless functions",
+        "typical_next": ["functions:invoke", "functions:list"],
+        "performance": "5-15s"
+      }
+    },
+    {
+      "name": "functions:invoke",
+      "category": "functions",
+      "action": "invoke",
+      "description": "Invoke edge function",
+      "usage": "supabase-cli functions:invoke <project-ref> <function-name> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "function-name", "required": true}
+      ],
+      "flags": [
+        {"name": "--payload", "type": "string", "description": "JSON payload"}
+      ],
+      "ai_hints": {
+        "common_use": "Testing deployed functions",
+        "typical_next": ["functions:list"],
+        "performance": "< 5s (depends on function)"
+      }
+    },
+    {
+      "name": "security:audit",
+      "category": "security",
+      "action": "audit",
+      "description": "Run security audit",
+      "usage": "supabase-cli security:audit <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "output": {"type": "array", "fields": ["severity", "finding", "recommendation"]},
+      "ai_hints": {
+        "common_use": "Identifying security vulnerabilities",
+        "typical_next": ["security:policies:list", "security:restrictions:add"],
+        "performance": "5-10s",
+        "best_practice": "Run before production deployment"
+      }
+    },
+    {
+      "name": "security:restrictions:list",
+      "category": "security",
+      "action": "list",
+      "description": "List IP restrictions",
+      "usage": "supabase-cli security:restrictions:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing network access controls",
+        "typical_next": ["security:restrictions:add"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "security:restrictions:add",
+      "category": "security",
+      "action": "add",
+      "description": "Add IP restriction",
+      "usage": "supabase-cli security:restrictions:add <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--cidr", "type": "string", "required": true, "description": "CIDR notation (e.g., 203.0.113.0/24)"}
+      ],
+      "ai_hints": {
+        "common_use": "Restricting database access by IP",
+        "typical_next": ["security:restrictions:list"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "security:restrictions:remove",
+      "category": "security",
+      "action": "remove",
+      "description": "Remove IP restriction",
+      "usage": "supabase-cli security:restrictions:remove <project-ref> <restriction-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "restriction-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "ai_hints": {
+        "common_use": "Removing IP restrictions",
+        "requires_confirmation": true,
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "security:policies:list",
+      "category": "security",
+      "action": "list",
+      "description": "List security policies",
+      "usage": "supabase-cli security:policies:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Reviewing security policies",
+        "typical_next": ["security:audit"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "storage:buckets:list",
+      "category": "storage",
+      "action": "list",
+      "description": "List storage buckets",
+      "usage": "supabase-cli storage:buckets:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing storage configuration",
+        "typical_next": ["storage:buckets:get", "storage:buckets:create"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "storage:buckets:get",
+      "category": "storage",
+      "action": "get",
+      "description": "Get bucket details",
+      "usage": "supabase-cli storage:buckets:get <project-ref> <bucket-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "bucket-id", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Inspecting bucket configuration",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "storage:buckets:create",
+      "category": "storage",
+      "action": "create",
+      "description": "Create storage bucket",
+      "usage": "supabase-cli storage:buckets:create <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--name", "type": "string", "required": true},
+        {"name": "--public", "type": "boolean", "default": false}
+      ],
+      "ai_hints": {
+        "common_use": "Creating storage containers",
+        "typical_next": ["storage:buckets:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "storage:buckets:delete",
+      "category": "storage",
+      "action": "delete",
+      "description": "Delete storage bucket (DESTRUCTIVE)",
+      "usage": "supabase-cli storage:buckets:delete <project-ref> <bucket-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "bucket-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "destructive": true,
+      "ai_hints": {
+        "common_use": "Removing unused buckets",
+        "warning": "DESTRUCTIVE - All files in bucket will be deleted",
+        "requires_confirmation": true,
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "storage:policies:list",
+      "category": "storage",
+      "action": "list",
+      "description": "List storage policies",
+      "usage": "supabase-cli storage:policies:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Reviewing storage access policies",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "storage:policies:set",
+      "category": "storage",
+      "action": "set",
+      "description": "Set storage policy",
+      "usage": "supabase-cli storage:policies:set <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--bucket", "type": "string", "required": true},
+        {"name": "--policy", "type": "string", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Configuring storage access rules",
+        "typical_next": ["storage:policies:list"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "auth:jwt:get",
+      "category": "auth",
+      "action": "get",
+      "description": "Get JWT token",
+      "usage": "supabase-cli auth:jwt:get [flags]",
+      "ai_hints": {
+        "common_use": "Retrieving authentication token",
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "auth:jwt:rotate",
+      "category": "auth",
+      "action": "rotate",
+      "description": "Rotate JWT secret",
+      "usage": "supabase-cli auth:jwt:rotate <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "ai_hints": {
+        "common_use": "Security maintenance - rotating secrets",
+        "warning": "Will invalidate existing tokens",
+        "requires_confirmation": true,
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "auth:providers:list",
+      "category": "auth",
+      "action": "list",
+      "description": "List auth providers",
+      "usage": "supabase-cli auth:providers:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing authentication configuration",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "auth:providers:config",
+      "category": "auth",
+      "action": "config",
+      "description": "Configure auth provider",
+      "usage": "supabase-cli auth:providers:config <provider> <project-ref> [flags]",
+      "args": [
+        {"name": "provider", "required": true, "values": ["google", "github", "facebook"]},
+        {"name": "project-ref", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Setting up OAuth providers",
+        "typical_next": ["auth:providers:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "auth:service:config",
+      "category": "auth",
+      "action": "config",
+      "description": "Configure auth service",
+      "usage": "supabase-cli auth:service:config <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Configuring authentication service settings",
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "auth:sso:list",
+      "category": "auth",
+      "action": "list",
+      "description": "List SSO configurations",
+      "usage": "supabase-cli auth:sso:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing SSO setup",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "auth:sso:enable",
+      "category": "auth",
+      "action": "enable",
+      "description": "Enable SSO provider",
+      "usage": "supabase-cli auth:sso:enable <provider-id> <project-ref> [flags]",
+      "args": [
+        {"name": "provider-id", "required": true},
+        {"name": "project-ref", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Enabling single sign-on",
+        "typical_next": ["auth:sso:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "auth:sso:disable",
+      "category": "auth",
+      "action": "disable",
+      "description": "Disable SSO provider",
+      "usage": "supabase-cli auth:sso:disable <provider-id> <project-ref> [flags]",
+      "args": [
+        {"name": "provider-id", "required": true},
+        {"name": "project-ref", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Disabling single sign-on",
+        "typical_next": ["auth:sso:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "config:doctor",
+      "category": "config",
+      "action": "doctor",
+      "description": "Diagnose CLI configuration",
+      "usage": "supabase-cli config:doctor [flags]",
+      "ai_hints": {
+        "common_use": "Troubleshooting CLI setup",
+        "typical_next": ["config:init"],
+        "performance": "< 2s",
+        "best_practice": "Run first to verify authentication"
+      }
+    },
+    {
+      "name": "config:init",
+      "category": "config",
+      "action": "init",
+      "description": "Initialize CLI configuration",
+      "usage": "supabase-cli config:init [flags]",
+      "ai_hints": {
+        "common_use": "First-time setup",
+        "typical_next": ["projects:list"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "config:create-profile",
+      "category": "config",
+      "action": "create",
+      "description": "Create configuration profile",
+      "usage": "supabase-cli config:create-profile <name> <project-ref> [flags]",
+      "args": [
+        {"name": "name", "required": true, "description": "Profile name"},
+        {"name": "project-ref", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Managing multiple environments",
+        "typical_next": ["config:list-profiles", "config:set-profile"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "config:list-profiles",
+      "category": "config",
+      "action": "list",
+      "description": "List configuration profiles",
+      "usage": "supabase-cli config:list-profiles [flags]",
+      "ai_hints": {
+        "common_use": "Viewing available profiles",
+        "typical_next": ["config:set-profile"],
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "config:set-profile",
+      "category": "config",
+      "action": "set",
+      "description": "Set active profile",
+      "usage": "supabase-cli config:set-profile <name> [flags]",
+      "args": [{"name": "name", "required": true}],
+      "ai_hints": {
+        "common_use": "Switching between environments",
+        "typical_next": ["projects:list"],
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "config:delete-profile",
+      "category": "config",
+      "action": "delete",
+      "description": "Delete configuration profile",
+      "usage": "supabase-cli config:delete-profile <name> [flags]",
+      "args": [{"name": "name", "required": true}],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "ai_hints": {
+        "common_use": "Removing unused profiles",
+        "requires_confirmation": true,
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "config:set-token",
+      "category": "config",
+      "action": "set",
+      "description": "Set access token",
+      "usage": "supabase-cli config:set-token [flags]",
+      "flags": [
+        {"name": "--token", "type": "string", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Configuring authentication",
+        "typical_next": ["config:doctor"],
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "config:show-current",
+      "category": "config",
+      "action": "show",
+      "description": "Show current configuration",
+      "usage": "supabase-cli config:show-current [flags]",
+      "ai_hints": {
+        "common_use": "Viewing active configuration",
+        "performance": "< 1s"
+      }
+    },
+    {
+      "name": "branches:list",
+      "category": "branches",
+      "action": "list",
+      "description": "List database branches",
+      "usage": "supabase-cli branches:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing development branches",
+        "typical_next": ["branches:create"],
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "branches:create",
+      "category": "branches",
+      "action": "create",
+      "description": "Create database branch",
+      "usage": "supabase-cli branches:create <name> [flags]",
+      "args": [{"name": "name", "required": true}],
+      "ai_hints": {
+        "common_use": "Creating isolated development environments",
+        "typical_next": ["branches:list"],
+        "performance": "30-60s",
+        "show_progress": true
+      }
+    },
+    {
+      "name": "migrations:list",
+      "category": "migrations",
+      "action": "list",
+      "description": "List database migrations",
+      "usage": "supabase-cli migrations:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing migration history",
+        "typical_next": ["migrations:apply"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "migrations:apply",
+      "category": "migrations",
+      "action": "apply",
+      "description": "Apply database migrations",
+      "usage": "supabase-cli migrations:apply <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--file", "type": "string", "required": true, "description": "Migration file"}
+      ],
+      "ai_hints": {
+        "common_use": "Applying schema changes",
+        "typical_next": ["db:schema", "migrations:list"],
+        "performance": "5-30s (depends on migration)",
+        "best_practice": "Test in development first"
+      }
+    },
+    {
+      "name": "logs:api:list",
+      "category": "logs",
+      "action": "list",
+      "description": "List API logs",
+      "usage": "supabase-cli logs:api:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing API request logs",
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "logs:api:get",
+      "category": "logs",
+      "action": "get",
+      "description": "Get specific API log",
+      "usage": "supabase-cli logs:api:get <project-ref> <log-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "log-id", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Inspecting specific API request",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "logs:errors:list",
+      "category": "logs",
+      "action": "list",
+      "description": "List error logs",
+      "usage": "supabase-cli logs:errors:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Debugging production issues",
+        "typical_next": ["logs:errors:get"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "logs:errors:get",
+      "category": "logs",
+      "action": "get",
+      "description": "Get specific error log",
+      "usage": "supabase-cli logs:errors:get <project-ref> <log-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "log-id", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Investigating specific error",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "logs:functions:list",
+      "category": "logs",
+      "action": "list",
+      "description": "List function logs",
+      "usage": "supabase-cli logs:functions:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Debugging edge functions",
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "logs:functions:get",
+      "category": "logs",
+      "action": "get",
+      "description": "Get specific function log",
+      "usage": "supabase-cli logs:functions:get <project-ref> <log-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "log-id", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Investigating function execution",
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "monitor:health",
+      "category": "monitor",
+      "action": "health",
+      "description": "Check project health",
+      "usage": "supabase-cli monitor:health <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Health check for monitoring",
+        "performance": "< 3s",
+        "best_practice": "Use in CI/CD pipelines"
+      }
+    },
+    {
+      "name": "monitor:metrics",
+      "category": "monitor",
+      "action": "metrics",
+      "description": "Get project metrics",
+      "usage": "supabase-cli monitor:metrics <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Monitoring project performance",
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "integrations:list",
+      "category": "integrations",
+      "action": "list",
+      "description": "List integrations",
+      "usage": "supabase-cli integrations:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing configured integrations",
+        "performance": "< 3s"
+      }
+    },
+    {
+      "name": "integrations:setup",
+      "category": "integrations",
+      "action": "setup",
+      "description": "Setup integration",
+      "usage": "supabase-cli integrations:setup <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--type", "type": "string", "required": true, "values": ["github", "vercel", "netlify"]}
+      ],
+      "ai_hints": {
+        "common_use": "Connecting external services",
+        "typical_next": ["integrations:list"],
+        "performance": "< 10s"
+      }
+    },
+    {
+      "name": "integrations:webhooks:list",
+      "category": "integrations",
+      "action": "list",
+      "description": "List webhooks",
+      "usage": "supabase-cli integrations:webhooks:list <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "ai_hints": {
+        "common_use": "Viewing webhook configuration",
+        "typical_next": ["integrations:webhooks:create"],
+        "performance": "< 2s"
+      }
+    },
+    {
+      "name": "integrations:webhooks:create",
+      "category": "integrations",
+      "action": "create",
+      "description": "Create webhook",
+      "usage": "supabase-cli integrations:webhooks:create <project-ref> [flags]",
+      "args": [{"name": "project-ref", "required": true}],
+      "flags": [
+        {"name": "--url", "type": "string", "required": true},
+        {"name": "--events", "type": "array", "required": true}
+      ],
+      "ai_hints": {
+        "common_use": "Setting up event notifications",
+        "typical_next": ["integrations:webhooks:list"],
+        "performance": "< 5s"
+      }
+    },
+    {
+      "name": "integrations:webhooks:delete",
+      "category": "integrations",
+      "action": "delete",
+      "description": "Delete webhook",
+      "usage": "supabase-cli integrations:webhooks:delete <project-ref> <webhook-id> [flags]",
+      "args": [
+        {"name": "project-ref", "required": true},
+        {"name": "webhook-id", "required": true}
+      ],
+      "flags": [
+        {"name": "--yes", "type": "boolean"}
+      ],
+      "ai_hints": {
+        "common_use": "Removing webhook",
+        "requires_confirmation": true,
+        "performance": "< 3s"
+      }
+    }
+  ],
+  "global_flags": [
+    {"name": "--format", "type": "string", "values": ["json", "table", "yaml"], "default": "json", "description": "Output format"},
+    {"name": "--yes", "type": "boolean", "description": "Skip confirmation prompts (required for CI/CD)"},
+    {"name": "--debug", "type": "boolean", "description": "Enable debug output"},
+    {"name": "--no-color", "type": "boolean", "description": "Disable colored output"},
+    {"name": "--help", "type": "boolean", "description": "Show help for command"}
+  ],
+  "common_patterns": [
+    "List resources → Filter/Select → Get details → Act",
+    "Create backup → Perform operation → Restore if needed",
+    "Deploy → Test → Monitor → Rollback if issues",
+    "Configure → Verify → Apply",
+    "Audit → Review findings → Fix → Re-audit"
+  ]
+}

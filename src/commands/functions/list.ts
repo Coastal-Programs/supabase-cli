@@ -1,5 +1,6 @@
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, PaginationFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, InfoMessages } from '../../error-messages'
 import { listFunctions } from '../../supabase'
 
 export default class FunctionsList extends BaseCommand {
@@ -9,8 +10,8 @@ export default class FunctionsList extends BaseCommand {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-project',
-    '<%= config.bin %> <%= command.id %> --format table',
-    '<%= config.bin %> <%= command.id %> --limit 20',
+    '<%= config.bin %> <%= command.id %> --project my-project --format table',
+    '<%= config.bin %> <%= command.id %> -p my-project --limit 20',
   ]
 
   static flags = {
@@ -29,10 +30,11 @@ export default class FunctionsList extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      if (!flags.quiet) {
+        this.header('Edge Functions')
       }
 
       // Fetch all functions from Supabase API
@@ -47,16 +49,26 @@ export default class FunctionsList extends BaseCommand {
       const limit = flags.limit || 100
       const functions = allFunctions.slice(offset, offset + limit)
 
-      // Output results
-      if (!flags.quiet) {
-        this.header('Edge Functions')
+      // Check for empty results
+      if (functions.length === 0) {
+        if (!flags.quiet) {
+          this.warning(InfoMessages.NO_RESULTS('Edge Functions'))
+          this.info('Deploy a function with: supabase-cli functions:deploy')
+        }
+
+        this.output([])
+        process.exit(0)
       }
 
+      // Output results
       this.output(functions)
 
       if (!flags.quiet) {
         this.divider()
-        this.info(`Total: ${functions.length} of ${allFunctions.length} functions`)
+        this.info(InfoMessages.RESULTS_COUNT(functions.length, 'function'))
+        if (allFunctions.length > functions.length) {
+          this.info(`Showing ${offset + 1}-${offset + functions.length} of ${allFunctions.length} total`)
+        }
       }
 
       process.exit(0)

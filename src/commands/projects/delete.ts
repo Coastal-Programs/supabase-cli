@@ -1,64 +1,77 @@
-import { Args } from '@oclif/core'
-
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, ConfirmationFlags, OutputFormatFlags } from '../../base-flags'
-import { deleteProject } from '../../supabase'
+import { AutomationFlags, ConfirmationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
+import { deleteProject, getProject } from '../../supabase'
 
 export default class ProjectsDelete extends BaseCommand {
   static aliases = ['projects:rm', 'proj:delete']
 
-  static args = {
-    ref: Args.string({
-      description: 'Project reference ID',
-      required: true,
-    }),
-  }
-
   static description = 'Delete a Supabase project'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> abcdefghijklmnop',
-    '<%= config.bin %> <%= command.id %> my-project-ref --yes',
-    '<%= config.bin %> <%= command.id %> my-project-ref --force',
+    '<%= config.bin %> <%= command.id %> --project abcdefghijklmnop',
+    '<%= config.bin %> <%= command.id %> --project my-project-ref --yes',
+    '<%= config.bin %> <%= command.id %> -p my-project-ref --force',
   ]
 
   static flags = {
     ...BaseCommand.baseFlags,
+    ...ProjectFlags,
     ...OutputFormatFlags,
     ...AutomationFlags,
     ...ConfirmationFlags,
   }
 
   async run(): Promise<void> {
-    const { args, flags } = await this.parse(ProjectsDelete)
+    const { flags } = await this.parse(ProjectsDelete)
 
     try {
+      // Get project reference
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
+
+      if (!projectRef) {
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      // Get project details for confirmation
+      const project = await this.spinner(
+        `Fetching project ${projectRef}...`,
+        async () => getProject(projectRef),
+        'Project details fetched',
+      )
+
+      if (!flags.quiet) {
+        this.header('Delete Project')
+        this.warning('This action is irreversible!')
+        this.info(`Project: ${project.name}`)
+        this.info(`Reference: ${projectRef}`)
+        this.divider()
+      }
+
       // Confirm deletion
       if (!flags.yes && !flags.force && !flags['no-interactive']) {
-        this.warning('This action is irreversible!')
         const confirmed = await this.confirm(
-          `Are you sure you want to delete project ${args.ref}?`,
+          ErrorMessages.CONFIRM_DELETE('project', project.name),
           false,
         )
 
         if (!confirmed) {
-          this.info('Project deletion cancelled')
+          this.warning(WarningMessages.OPERATION_CANCELLED())
           process.exit(0)
         }
       }
 
       // Delete project
       await this.spinner(
-        `Deleting project ${args.ref}...`,
-        async () => deleteProject(args.ref),
+        `Deleting project ${projectRef}...`,
+        async () => deleteProject(projectRef),
         'Project deleted successfully',
       )
 
       // Output results
       if (!flags.quiet) {
-        this.header('Project Deleted')
-        this.success(`Project ${args.ref} has been deleted successfully`)
         this.divider()
+        this.success(SuccessMessages.RESOURCE_DELETED('Project', project.name))
       }
 
       process.exit(0)

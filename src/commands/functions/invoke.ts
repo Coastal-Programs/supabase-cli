@@ -2,6 +2,7 @@ import { Args, Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, SuccessMessages } from '../../error-messages'
 import { SupabaseError, SupabaseErrorCode } from '../../errors'
 import { invokeFunction } from '../../supabase'
 
@@ -57,10 +58,7 @@ export default class FunctionsInvoke extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
       }
 
       const functionName = args.name
@@ -71,13 +69,20 @@ export default class FunctionsInvoke extends BaseCommand {
       if (flags.body) {
         try {
           body = JSON.parse(flags.body)
-        } catch {
+        } catch (error) {
           throw new SupabaseError(
-            `Invalid JSON body: ${flags.body}`,
+            ErrorMessages.INVALID_JSON(flags.body),
             SupabaseErrorCode.INVALID_INPUT,
             400,
           )
         }
+      }
+
+      if (!flags.quiet) {
+        this.header('Invoke Edge Function')
+        this.info(`Function: ${functionName}`)
+        this.info(`Method: ${method}`)
+        this.divider()
       }
 
       // Invoke function with timing
@@ -97,7 +102,7 @@ export default class FunctionsInvoke extends BaseCommand {
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               throw new SupabaseError(
-                `Function invocation timed out after ${flags.timeout}ms. Try increasing with --timeout flag.`,
+                ErrorMessages.TIMEOUT(`Function invocation`, flags.timeout),
                 SupabaseErrorCode.TIMEOUT,
                 408,
               )
@@ -108,20 +113,10 @@ export default class FunctionsInvoke extends BaseCommand {
             clearTimeout(timeoutId)
           }
         },
-        `Function ${functionName} invoked`,
+        SuccessMessages.FUNCTION_INVOKED(functionName),
       )
 
       const executionTime = Date.now() - startTime
-
-      // Output results
-      if (!flags.quiet) {
-        this.header('Edge Function Response')
-        this.info(`Function: ${functionName}`)
-        this.info(`Method: ${method}`)
-        this.info(`Status: ${result.status}`)
-        this.info(`Execution time: ${executionTime}ms`)
-        this.divider()
-      }
 
       // Format output
       const output = {
@@ -134,6 +129,9 @@ export default class FunctionsInvoke extends BaseCommand {
 
       if (!flags.quiet) {
         this.divider()
+        this.info(`Execution time: ${executionTime}ms`)
+        this.info(`Status code: ${result.status}`)
+
         if (result.status >= 200 && result.status < 300) {
           this.success(`Function invoked successfully in ${executionTime}ms`)
         } else {

@@ -27,9 +27,26 @@ tsconfig.test.json
 coverage/
 .vscode/
 .idea/
+/scripts
+
+# AI resources (development only)
+.ai/
+CLAUDE.md
 
 # Logs
 *.log
+
+# Temp files
+*.tgz
+*.tmp
+*.temp
+nul
+test-results.*
+
+# Disabled/temporary code
+.temp_disabled/
+*.backup
+*.backup2
 
 # Misc
 *.md

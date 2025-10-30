@@ -1,7 +1,7 @@
 {
   "name": "@coastal-programs/supabase-cli",
   "version": "0.1.0",
-  "description": "Production-ready Supabase CLI built with oclif + TypeScript",
+  "description": "Unofficial Supabase Management API CLI for AI agents & automation",
   "author": "Coastal Programs",
   "license": "MIT",
   "main": "dist/index.js",
@@ -22,7 +22,10 @@
     "cli",
     "oclif",
     "typescript",
-    "api"
+    "api",
+    "automation",
+    "devops",
+    "management-api"
   ],
   "engines": {
     "node": ">=22.0.0"
@@ -42,44 +45,41 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
     "prepack": "npm run build && oclif manifest && oclif readme",
+    "prepublishOnly": "node scripts/verify-package.js",
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "test:coverage": "nyc --reporter=lcov --reporter=text --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "test:performance": "mocha --timeout 120000 \"test/performance/**/*.test.ts\"",
     "test:performance:quick": "mocha --timeout 60000 \"test/performance/benchmarks.test.ts\"",
     "test:watch": "mocha --watch --watch-extensions ts --require ts-node/register \"test/**/*.test.ts\"",
+    "test:examples": "bash scripts/test-examples.sh",
     "version": "oclif readme && git add README.md",
     "readme": "oclif readme",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "validate:ai": "node scripts/validate-ai-resources.js",
+    "validate:schemas": "node scripts/validate-schemas.js",
+    "verify:package": "node scripts/verify-package.js"
   },
   "dependencies": {
     "@oclif/core": "^2.15.0",
     "@oclif/plugin-help": "^5.2.20",
-    "@oclif/plugin-plugins": "^3.9.0",
-    "@oclif/plugin-update": "^3.2.4",
-    "@oclif/plugin-warn-if-update-available": "^2.1.1",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.3",
     "dayjs": "^1.11.10",
-    "dotenv": "^16.3.1",
     "inquirer": "^8.2.6",
-    "listr2": "^7.0.2",
-    "lodash": "^4.17.21",
     "ora": "^5.4.1",
-    "quick-lru": "^5.1.1",
-    "tslib": "^2.6.2",
-    "update-notifier": "^6.0.2"
+    "quick-lru": "^5.1.1"
   },
   "devDependencies": {
     "@oclif/test": "^2.5.6",
     "@types/chai": "^4.3.11",
     "@types/inquirer": "^8.2.10",
-    "@types/lodash": "^4.14.202",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.6",
     "@types/sinon": "^17.0.2",
-    "@types/update-notifier": "^6.0.8",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^2.1.1",
     "chai": "^4.3.10",
     "eslint": "^8.56.0",
     "eslint-config-oclif": "^5.0.0",
@@ -88,7 +88,7 @@
     "eslint-plugin-prettier": "^5.1.2",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
-    "oclif": "^3.17.2",
+    "oclif": "^4.22.38",
     "prettier": "^3.1.1",
     "shx": "^0.3.4",
     "sinon": "^17.0.1",
@@ -99,19 +99,35 @@
     "bin": "supabase-cli",
     "dirname": "supabase-cli",
     "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins",
-      "@oclif/plugin-update",
-      "@oclif/plugin-warn-if-update-available"
-    ],
+    "plugins": [],
     "topicSeparator": ":",
     "topics": {
       "projects": {
         "description": "Manage Supabase projects"
       },
+      "db": {
+        "description": "Database operations and management"
+      },
+      "functions": {
+        "description": "Edge Functions deployment and management"
+      },
+      "migrations": {
+        "description": "Database migration management"
+      },
+      "branches": {
+        "description": "Preview branches management"
+      },
+      "storage": {
+        "description": "Storage buckets and policies"
+      },
+      "security": {
+        "description": "Security audit and compliance"
+      },
+      "backup": {
+        "description": "Backup management (read-only)"
+      },
       "config": {
-        "description": "Configure CLI settings"
+        "description": "CLI configuration"
       }
     },
     "hooks": {}

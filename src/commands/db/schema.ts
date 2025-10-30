@@ -2,6 +2,7 @@ import { Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, InfoMessages } from '../../error-messages'
 import { getTableSchema, listTables } from '../../supabase'
 
 export default class DbSchema extends BaseCommand {
@@ -10,11 +11,10 @@ export default class DbSchema extends BaseCommand {
   static description = 'Show database schema information'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --project my-project-ref',
-    '<%= config.bin %> <%= command.id %> --table users',
-    '<%= config.bin %> <%= command.id %> --table users --format table',
-    '<%= config.bin %> <%= command.id %> --schema auth --format yaml',
+    '<%= config.bin %> <%= command.id %> --project my-project-ref --table users',
+    '<%= config.bin %> <%= command.id %> -p my-project-ref --table users --format table',
+    '<%= config.bin %> <%= command.id %> -p my-project-ref --schema auth --format yaml',
   ]
 
   static flags = {
@@ -41,42 +41,49 @@ export default class DbSchema extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
       }
 
       if (flags.table) {
         // Get specific table schema
+        if (!flags.quiet) {
+          this.header(`Table Schema: ${flags.table}`)
+        }
+
         const tableSchema = await this.spinner(
           `Fetching schema for table '${flags.table}'...`,
           async () => getTableSchema(projectRef, flags.table!),
           'Table schema fetched successfully',
         )
 
-        if (!flags.quiet) {
-          this.header(`Schema: ${flags.table}`)
-        }
-
         this.output(tableSchema)
       } else {
         // List all tables in schema
+        if (!flags.quiet) {
+          this.header(`Database Schema: ${flags.schema}`)
+        }
+
         const tables = await this.spinner(
           `Fetching tables from schema '${flags.schema}'...`,
           async () => listTables(projectRef, flags.schema),
           'Tables fetched successfully',
         )
 
-        if (!flags.quiet) {
-          this.header(`Database Schema: ${flags.schema}`)
+        // Check for empty results
+        if (tables.length === 0) {
+          if (!flags.quiet) {
+            this.warning(InfoMessages.NO_RESULTS(`tables in schema '${flags.schema}'`))
+          }
+
+          this.output([])
+          process.exit(0)
         }
 
         this.output(tables)
 
         if (!flags.quiet) {
           this.divider()
-          this.info(`Total: ${tables.length} table(s)`)
+          this.info(InfoMessages.RESULTS_COUNT(tables.length, 'table'))
 
           // Show summary statistics
           const totalSize = tables.reduce((sum, t) => sum + t.bytes, 0)

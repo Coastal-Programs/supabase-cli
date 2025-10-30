@@ -181,7 +181,7 @@ export class ValidationError extends SupabaseError {
 
 export class NotFoundError extends SupabaseError {
   constructor(resource: string, identifier?: string) {
-    const message = identifier
+    const message = identifier !== undefined && identifier !== null
       ? `${resource} with identifier '${identifier}' not found`
       : `${resource} not found`
     super(message, SupabaseErrorCode.NOT_FOUND, 404)

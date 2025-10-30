@@ -1,0 +1,2030 @@
+{
+  "version": "0.1.0",
+  "updated_at": "2024-10-29T00:00:00Z",
+  "workflow_count": 25,
+  "description": "Task-based workflows for common Supabase CLI operations. Each workflow provides step-by-step guidance for AI agents and humans.",
+  "workflows": [
+    {
+      "id": "create-first-backup",
+      "task": "Create your first manual database backup",
+      "category": "backup",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN environment variable set",
+        "Project reference ID known",
+        "Project must be in active state"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref> --format json",
+          "purpose": "Verify project exists and is accessible",
+          "expected_output": "JSON object with project details including status",
+          "success_criteria": "Project status is 'ACTIVE_HEALTHY'"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli backup:list <project-ref> --format table",
+          "purpose": "Check existing backups before creating new one",
+          "expected_output": "Table showing current backups (may be empty)",
+          "success_criteria": "Command completes without errors"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:create <project-ref> --description 'My first backup'",
+          "purpose": "Create the manual backup with descriptive label",
+          "expected_output": "JSON with backup_id, created_at, and status fields",
+          "success_criteria": "Backup ID returned and status shows 'COMPLETED' or 'IN_PROGRESS'"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli backup:get <project-ref> <backup-id>",
+          "purpose": "Verify backup completed successfully",
+          "expected_output": "Full backup details with status 'COMPLETED'",
+          "success_criteria": "Status is 'COMPLETED' and size_bytes > 0"
+        }
+      ],
+      "success_criteria": [
+        "Backup appears in backup:list output",
+        "Backup status is COMPLETED",
+        "Backup has non-zero size"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Check SUPABASE_ACCESS_TOKEN is set correctly with 'config:show-current'",
+            "prevention": "Run 'config:doctor' before starting"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref with 'projects:list' command",
+            "prevention": "Always list projects first to get correct project-ref"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Retry the backup:create command - large databases take longer",
+            "prevention": "Expect 15-60s for backup creation depending on database size"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli backup:delete <project-ref> <backup-id> --yes"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Wrap in script that polls backup:get until status=COMPLETED, useful for CI/CD",
+        "validation": "Check response.status === 'COMPLETED' and response.size_bytes > 0",
+        "optimization": "Run during low-traffic periods for faster completion"
+      }
+    },
+    {
+      "id": "restore-from-backup",
+      "task": "Restore database from a previous backup",
+      "category": "backup",
+      "difficulty": "complex",
+      "estimated_time": "5-10 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID known",
+        "Backup ID to restore from",
+        "Understanding that current data will be replaced (DESTRUCTIVE)"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli backup:create <project-ref> --description 'Pre-restore safety backup'",
+          "purpose": "Create safety backup of current state before restore",
+          "expected_output": "New backup ID for rollback if needed",
+          "success_criteria": "Backup created successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli backup:list <project-ref> --format table",
+          "purpose": "List available backups and verify target backup exists",
+          "expected_output": "Table with all backups including the one to restore",
+          "success_criteria": "Target backup-id appears in list with status COMPLETED"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:get <project-ref> <backup-id>",
+          "purpose": "Verify backup details and confirm it's the correct one",
+          "expected_output": "Full backup metadata including timestamp and description",
+          "success_criteria": "Backup timestamp and description match expectations"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli backup:restore <project-ref> <backup-id>",
+          "purpose": "Restore database from selected backup (requires confirmation)",
+          "expected_output": "Confirmation prompt, then progress updates during restore",
+          "success_criteria": "Restore completes with success message"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli db:query <project-ref> 'SELECT COUNT(*) FROM pg_tables WHERE schemaname = public'",
+          "purpose": "Verify database is operational after restore",
+          "expected_output": "Query result showing table count",
+          "success_criteria": "Query executes successfully"
+        }
+      ],
+      "success_criteria": [
+        "Restore operation completes without errors",
+        "Database queries work after restore",
+        "Safety backup exists for rollback if needed"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list to get exact project-ref"
+          },
+          {
+            "error": "NOT_FOUND",
+            "solution": "Backup ID may be invalid - check with backup:list",
+            "prevention": "Always verify backup exists before attempting restore"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Wait and check project status - restore may still be in progress",
+            "prevention": "Large databases can take 30-120s to restore"
+          },
+          {
+            "error": "DATABASE_ERROR",
+            "solution": "Check if backup is corrupted - try different backup",
+            "prevention": "Verify backup status is COMPLETED before restore"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli backup:restore <project-ref> <safety-backup-id>",
+          "Use the safety backup ID from step 1 to restore to pre-restore state"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Use --yes flag to skip confirmation: backup:restore <ref> <id> --yes",
+        "validation": "Run test query after restore to verify data integrity",
+        "optimization": "Schedule during maintenance window to minimize user impact"
+      }
+    },
+    {
+      "id": "setup-automated-backups",
+      "task": "Set up automated daily backups for a project",
+      "category": "backup",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Decision on retention period (default: 7 days)"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli backup:schedule:list <project-ref>",
+          "purpose": "Check if automated backups are already configured",
+          "expected_output": "List of existing backup schedules (may be empty)",
+          "success_criteria": "Command executes successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli backup:schedule:create <project-ref> --frequency daily --retention 7",
+          "purpose": "Create daily backup schedule with 7-day retention",
+          "expected_output": "Schedule details with schedule_id and configuration",
+          "success_criteria": "Schedule created with frequency=daily, retention=7"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:schedule:list <project-ref>",
+          "purpose": "Verify schedule was created successfully",
+          "expected_output": "Schedule list including newly created schedule",
+          "success_criteria": "New schedule appears in list with correct settings"
+        }
+      ],
+      "success_criteria": [
+        "Schedule created with daily frequency",
+        "Retention period set correctly",
+        "Schedule appears in schedule:list output"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "ALREADY_EXISTS",
+            "solution": "Delete existing schedule first or modify retention on existing",
+            "prevention": "Check backup:schedule:list before creating new schedule"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Ensure frequency is 'daily' or 'weekly', retention is positive integer",
+            "prevention": "Use valid values: --frequency daily|weekly --retention 1-30"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref with projects:list",
+            "prevention": "Always verify project exists first"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "Get schedule ID from backup:schedule:list",
+          "Use management API to delete schedule (CLI delete command coming soon)"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Set retention based on compliance needs: 7 days for dev, 30+ for production",
+        "validation": "Verify first automated backup appears within 24 hours",
+        "optimization": "Weekly backups with longer retention for cost savings on dev environments"
+      }
+    },
+    {
+      "id": "point-in-time-recovery",
+      "task": "Restore database to specific point in time",
+      "category": "backup",
+      "difficulty": "complex",
+      "estimated_time": "5-8 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "PITR enabled on project (Pro plan or higher)",
+        "ISO timestamp of target recovery point"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli backup:create <project-ref> --description 'Pre-PITR safety backup'",
+          "purpose": "Create safety backup before PITR operation",
+          "expected_output": "Backup ID for rollback",
+          "success_criteria": "Backup created successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify PITR is enabled on project",
+          "expected_output": "Project details with pitr_enabled: true",
+          "success_criteria": "PITR feature is enabled"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:pitr:restore <project-ref> --timestamp '2024-10-28T14:30:00Z'",
+          "purpose": "Restore to specific point in time (DESTRUCTIVE)",
+          "expected_output": "Confirmation prompt, then restore progress",
+          "success_criteria": "Restore completes successfully"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:query <project-ref> 'SELECT NOW()'",
+          "purpose": "Verify database is operational after PITR",
+          "expected_output": "Current timestamp from database",
+          "success_criteria": "Query executes successfully"
+        }
+      ],
+      "success_criteria": [
+        "PITR restore completes without errors",
+        "Database is accessible after restore",
+        "Data matches expected state at target timestamp"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Ensure timestamp is ISO 8601 format: YYYY-MM-DDTHH:mm:ssZ",
+            "prevention": "Use ISO format and ensure timestamp is within retention window"
+          },
+          {
+            "error": "NOT_FOUND",
+            "solution": "PITR may not be enabled - check project settings",
+            "prevention": "Verify PITR enabled with projects:get before attempting restore"
+          },
+          {
+            "error": "INVALID_INPUT",
+            "solution": "Timestamp may be outside PITR retention window (typically 7-30 days)",
+            "prevention": "Only use timestamps within PITR retention period"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "PITR can take 30-120s - wait for completion",
+            "prevention": "Expect longer restore times for PITR vs regular backups"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli backup:restore <project-ref> <safety-backup-id>",
+          "Restore from safety backup created in step 1"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Use --yes flag for non-interactive: backup:pitr:restore <ref> --timestamp <ts> --yes",
+        "validation": "Query specific data after restore to verify recovery point accuracy",
+        "optimization": "PITR is best for recent recovery (hours/days), use backups for older restores"
+      }
+    },
+    {
+      "id": "backup-cleanup",
+      "task": "Clean up old backups to manage storage costs",
+      "category": "backup",
+      "difficulty": "medium",
+      "estimated_time": "3-5 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Understanding of which backups to keep"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli backup:list <project-ref> --format table",
+          "purpose": "List all backups to identify old ones",
+          "expected_output": "Table showing backups sorted by date",
+          "success_criteria": "All backups displayed with creation dates"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli backup:get <project-ref> <backup-id>",
+          "purpose": "Review details of backup before deletion",
+          "expected_output": "Backup metadata including description, size, date",
+          "success_criteria": "Backup details confirm it's safe to delete"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:delete <project-ref> <backup-id>",
+          "purpose": "Delete the selected backup (requires confirmation)",
+          "expected_output": "Confirmation prompt, then deletion success message",
+          "success_criteria": "Backup deleted successfully"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli backup:list <project-ref> --format table",
+          "purpose": "Verify backup was removed",
+          "expected_output": "Table without deleted backup",
+          "success_criteria": "Deleted backup no longer appears in list"
+        }
+      ],
+      "success_criteria": [
+        "Old backups deleted successfully",
+        "Important backups preserved",
+        "At least one recent backup remains"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "NOT_FOUND",
+            "solution": "Backup may already be deleted - check backup:list",
+            "prevention": "Always verify backup exists before deletion"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Cannot delete automated backups, only manual ones",
+            "prevention": "Check backup type before attempting deletion"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify you have delete permissions on project",
+            "prevention": "Ensure SUPABASE_ACCESS_TOKEN has required permissions"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": false,
+        "steps": [
+          "Deleted backups cannot be recovered",
+          "Always verify backup ID before deletion"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Script to delete backups older than N days: filter backup:list by created_at",
+        "validation": "Always keep at least 2-3 recent backups before deleting older ones",
+        "optimization": "Delete in batches with --yes flag: backup:delete <ref> <id> --yes"
+      }
+    },
+    {
+      "id": "execute-readonly-query",
+      "task": "Execute read-only query to inspect database",
+      "category": "database",
+      "difficulty": "simple",
+      "estimated_time": "1-2 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "SQL query prepared (SELECT only)"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project is accessible and healthy",
+          "expected_output": "Project details with status ACTIVE_HEALTHY",
+          "success_criteria": "Project status is healthy"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:query <project-ref> 'SELECT version()'",
+          "purpose": "Test database connection with simple query",
+          "expected_output": "PostgreSQL version string",
+          "success_criteria": "Query executes and returns version"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:query <project-ref> 'SELECT * FROM your_table LIMIT 10' --format table",
+          "purpose": "Execute your actual query and view results",
+          "expected_output": "Table with query results",
+          "success_criteria": "Data returned in expected format"
+        }
+      ],
+      "success_criteria": [
+        "Query executes without errors",
+        "Results match expectations",
+        "No data modified (read-only)"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "QUERY_ERROR",
+            "solution": "Check SQL syntax and table/column names",
+            "prevention": "Test query in SQL editor first"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify database credentials and permissions",
+            "prevention": "Ensure token has database query permissions"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Query may be too complex - add LIMIT or optimize",
+            "prevention": "Use LIMIT clause for large result sets"
+          },
+          {
+            "error": "DATABASE_ERROR",
+            "solution": "Table or column may not exist - check schema",
+            "prevention": "Use db:schema to verify table structure first"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - read-only queries don't modify data"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Parse JSON output for programmatic access: --format json | jq",
+        "validation": "Use COUNT(*) queries to verify result set size before fetching all rows",
+        "optimization": "Add WHERE clause and LIMIT to reduce query time and data transfer"
+      }
+    },
+    {
+      "id": "apply-schema-migration",
+      "task": "Apply database schema migration safely",
+      "category": "database",
+      "difficulty": "medium",
+      "estimated_time": "5-7 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Migration SQL file prepared and tested",
+        "Backup of current database state"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli backup:create <project-ref> --description 'Pre-migration backup'",
+          "purpose": "Create safety backup before schema changes",
+          "expected_output": "Backup ID for rollback",
+          "success_criteria": "Backup created successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:schema <project-ref>",
+          "purpose": "View current schema before migration",
+          "expected_output": "Current database schema definition",
+          "success_criteria": "Schema displayed successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli migrations:list <project-ref>",
+          "purpose": "Check migration history",
+          "expected_output": "List of applied migrations",
+          "success_criteria": "Migration list retrieved"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli migrations:apply <project-ref> --file ./migrations/001_add_users_table.sql",
+          "purpose": "Apply the migration file",
+          "expected_output": "Migration progress and success confirmation",
+          "success_criteria": "Migration applied without errors"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli db:schema <project-ref>",
+          "purpose": "Verify schema changes applied correctly",
+          "expected_output": "Updated schema with new changes",
+          "success_criteria": "New tables/columns visible in schema"
+        },
+        {
+          "step": 6,
+          "command": "supabase-cli db:query <project-ref> 'SELECT * FROM new_table LIMIT 1'",
+          "purpose": "Test that new schema elements are accessible",
+          "expected_output": "Query executes successfully (even if no rows)",
+          "success_criteria": "No errors querying new schema elements"
+        }
+      ],
+      "success_criteria": [
+        "Migration applies without errors",
+        "Schema changes visible in db:schema",
+        "New schema elements queryable",
+        "Backup exists for rollback"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "QUERY_ERROR",
+            "solution": "Check migration SQL syntax and dependencies",
+            "prevention": "Test migration in development environment first"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Migration file may have invalid SQL",
+            "prevention": "Validate SQL syntax before applying"
+          },
+          {
+            "error": "DATABASE_ERROR",
+            "solution": "Schema conflict or constraint violation - review migration",
+            "prevention": "Check for existing objects with same names"
+          },
+          {
+            "error": "FILE_NOT_FOUND",
+            "solution": "Verify migration file path is correct",
+            "prevention": "Use absolute paths or check current directory"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli backup:restore <project-ref> <backup-id>",
+          "Restore from backup created in step 1 to undo migration"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Chain migrations by applying multiple files sequentially",
+        "validation": "Write test queries to verify migration worked as expected",
+        "optimization": "Run migrations during low-traffic periods to minimize lock contention"
+      }
+    },
+    {
+      "id": "create-read-replica",
+      "task": "Create read replica for geographic distribution",
+      "category": "database",
+      "difficulty": "medium",
+      "estimated_time": "8-12 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Pro plan or higher (required for replicas)",
+        "Target region selected"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project plan supports read replicas",
+          "expected_output": "Project details including plan tier",
+          "success_criteria": "Plan is Pro or Enterprise"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:replicas:list <project-ref>",
+          "purpose": "Check existing replicas",
+          "expected_output": "List of current replicas (may be empty)",
+          "success_criteria": "Command executes successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:replicas:create <project-ref> --region us-west-1",
+          "purpose": "Create read replica in target region",
+          "expected_output": "Replica creation progress, replica ID",
+          "success_criteria": "Replica created with status PROVISIONING or ACTIVE"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:replicas:list <project-ref>",
+          "purpose": "Monitor replica provisioning status",
+          "expected_output": "List showing new replica with status",
+          "success_criteria": "Replica status is ACTIVE"
+        }
+      ],
+      "success_criteria": [
+        "Replica created successfully",
+        "Replica status is ACTIVE",
+        "Replica appears in replicas:list"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Check region is valid: us-east-1, us-west-1, eu-west-1, ap-southeast-1",
+            "prevention": "Use supported regions only"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify project is on Pro or Enterprise plan",
+            "prevention": "Check plan with projects:get before creating replica"
+          },
+          {
+            "error": "ALREADY_EXISTS",
+            "solution": "Replica may already exist in that region",
+            "prevention": "Check db:replicas:list for existing replicas"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Replica creation takes 30-90s - poll replicas:list for status",
+            "prevention": "Expect long provisioning time, use polling loop"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli db:replicas:delete <project-ref> <replica-id> --yes"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Poll db:replicas:list every 10s until status=ACTIVE",
+        "validation": "Test read queries against replica endpoint after creation",
+        "optimization": "Create replicas in regions closest to your users for lower latency"
+      }
+    },
+    {
+      "id": "configure-database-settings",
+      "task": "Configure database performance settings",
+      "category": "database",
+      "difficulty": "medium",
+      "estimated_time": "3-5 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Understanding of PostgreSQL configuration parameters",
+        "Knowledge of impact of setting changes"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "View current project configuration",
+          "expected_output": "Project details including database settings",
+          "success_criteria": "Current settings displayed"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:query <project-ref> 'SHOW max_connections'",
+          "purpose": "Check current value of setting before change",
+          "expected_output": "Current max_connections value",
+          "success_criteria": "Current value retrieved"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:config:set <project-ref> --setting max_connections --value 100",
+          "purpose": "Update database configuration setting",
+          "expected_output": "Configuration update confirmation",
+          "success_criteria": "Setting updated successfully"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:query <project-ref> 'SHOW max_connections'",
+          "purpose": "Verify setting was applied",
+          "expected_output": "New max_connections value (100)",
+          "success_criteria": "Value matches what was set"
+        }
+      ],
+      "success_criteria": [
+        "Setting updated without errors",
+        "New value visible in database",
+        "Database remains operational"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Setting name or value may be invalid - check PostgreSQL docs",
+            "prevention": "Only modify well-understood settings with valid values"
+          },
+          {
+            "error": "DATABASE_ERROR",
+            "solution": "Setting may require database restart",
+            "prevention": "Check if setting requires restart before changing"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Some settings require elevated permissions",
+            "prevention": "Verify permissions before attempting sensitive changes"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli db:config:set <project-ref> --setting max_connections --value <original-value>",
+          "Set back to original value from step 2"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Query current value first, store it, then change and verify",
+        "validation": "Test application behavior after config changes",
+        "optimization": "Common settings to tune: max_connections, shared_buffers, work_mem"
+      }
+    },
+    {
+      "id": "view-database-schema",
+      "task": "View and understand database schema structure",
+      "category": "database",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli db:schema <project-ref>",
+          "purpose": "Get full database schema DDL",
+          "expected_output": "Complete schema with CREATE TABLE statements",
+          "success_criteria": "Schema DDL displayed"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:query <project-ref> \"SELECT table_name FROM information_schema.tables WHERE table_schema='public'\" --format table",
+          "purpose": "List all tables in public schema",
+          "expected_output": "Table with all table names",
+          "success_criteria": "Tables listed successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:query <project-ref> \"SELECT column_name, data_type FROM information_schema.columns WHERE table_name='users'\" --format table",
+          "purpose": "View columns of specific table",
+          "expected_output": "Table showing column names and types",
+          "success_criteria": "Column details displayed"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:extensions <project-ref>",
+          "purpose": "View installed PostgreSQL extensions",
+          "expected_output": "List of enabled extensions",
+          "success_criteria": "Extensions listed"
+        }
+      ],
+      "success_criteria": [
+        "Schema structure understood",
+        "Tables and columns identified",
+        "Extensions viewed"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "QUERY_ERROR",
+            "solution": "Check table name spelling in information_schema queries",
+            "prevention": "List tables first, then query specific table details"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify token has schema read permissions",
+            "prevention": "Ensure proper access permissions"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - read-only operations"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Parse schema output to generate entity-relationship diagrams",
+        "validation": "Use information_schema queries for programmatic schema inspection",
+        "optimization": "Save schema output to file for reference: db:schema > schema.sql"
+      }
+    },
+    {
+      "id": "run-security-audit",
+      "task": "Run comprehensive security audit on project",
+      "category": "security",
+      "difficulty": "simple",
+      "estimated_time": "3-5 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Understanding of security best practices"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli security:audit <project-ref> --format table",
+          "purpose": "Run complete security audit",
+          "expected_output": "Table with findings categorized by severity (critical, high, medium, low)",
+          "success_criteria": "Audit completes and returns findings"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli security:policies:list <project-ref>",
+          "purpose": "Review current security policies",
+          "expected_output": "List of RLS policies and their configurations",
+          "success_criteria": "Policies listed successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli security:restrictions:list <project-ref>",
+          "purpose": "Check network access restrictions",
+          "expected_output": "List of IP restrictions if any",
+          "success_criteria": "Restrictions displayed"
+        }
+      ],
+      "success_criteria": [
+        "Audit completes successfully",
+        "All findings categorized by severity",
+        "Critical/high issues identified for remediation"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "TIMEOUT",
+            "solution": "Audit can take 5-10s for large projects - wait for completion",
+            "prevention": "Expect longer audit times for complex databases"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify token has security audit permissions",
+            "prevention": "Ensure proper access level for security operations"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list to get exact project-ref"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - audit is read-only"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Parse JSON output to filter critical/high severity findings: --format json | jq '.findings[] | select(.severity==\"critical\")'",
+        "validation": "Run audit before production deployment and after major changes",
+        "optimization": "Schedule regular audits (weekly/monthly) to catch issues early"
+      }
+    },
+    {
+      "id": "add-ip-restrictions",
+      "task": "Add IP whitelist restrictions for database access",
+      "category": "security",
+      "difficulty": "medium",
+      "estimated_time": "3-4 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "IP address or CIDR range to whitelist",
+        "Understanding of network security implications"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli security:restrictions:list <project-ref>",
+          "purpose": "View current IP restrictions",
+          "expected_output": "List of existing restrictions (may be empty)",
+          "success_criteria": "Current restrictions displayed"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli security:restrictions:add <project-ref> --cidr 203.0.113.0/24",
+          "purpose": "Add IP restriction for office network",
+          "expected_output": "Restriction ID and confirmation",
+          "success_criteria": "Restriction added successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli security:restrictions:list <project-ref>",
+          "purpose": "Verify restriction was added",
+          "expected_output": "List including new restriction",
+          "success_criteria": "New restriction appears in list"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:query <project-ref> 'SELECT 1' ",
+          "purpose": "Test that database is still accessible from allowed IP",
+          "expected_output": "Query result: 1",
+          "success_criteria": "Query succeeds from whitelisted IP"
+        }
+      ],
+      "success_criteria": [
+        "IP restriction added successfully",
+        "Database accessible from whitelisted IPs",
+        "Database blocked from non-whitelisted IPs"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "CIDR format must be valid: x.x.x.x/yy (e.g., 203.0.113.0/24)",
+            "prevention": "Validate CIDR notation before submitting"
+          },
+          {
+            "error": "INVALID_INPUT",
+            "solution": "IP address may be invalid or private range",
+            "prevention": "Use valid public IP ranges only"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify permissions to modify network settings",
+            "prevention": "Ensure admin-level access for security changes"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli security:restrictions:list <project-ref>",
+          "supabase-cli security:restrictions:remove <project-ref> <restriction-id> --yes"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Add multiple CIDRs for office, VPN, and cloud services",
+        "validation": "Test access from both whitelisted and non-whitelisted IPs",
+        "optimization": "Use broader CIDR ranges instead of individual IPs when possible"
+      }
+    },
+    {
+      "id": "rotate-jwt-secrets",
+      "task": "Rotate JWT secrets for security",
+      "category": "security",
+      "difficulty": "complex",
+      "estimated_time": "5-7 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Understanding that existing tokens will be invalidated",
+        "Plan to update clients with new secret"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli auth:jwt:get",
+          "purpose": "Get current JWT secret (save for rollback)",
+          "expected_output": "Current JWT secret",
+          "success_criteria": "Secret retrieved and saved"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project is healthy before rotation",
+          "expected_output": "Project status ACTIVE_HEALTHY",
+          "success_criteria": "Project is healthy"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli auth:jwt:rotate <project-ref>",
+          "purpose": "Rotate JWT secret (requires confirmation)",
+          "expected_output": "New JWT secret and confirmation",
+          "success_criteria": "Rotation completes, new secret returned"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli auth:jwt:get",
+          "purpose": "Verify new secret is active",
+          "expected_output": "New JWT secret (different from step 1)",
+          "success_criteria": "Secret has changed"
+        }
+      ],
+      "success_criteria": [
+        "JWT secret rotated successfully",
+        "New secret retrieved",
+        "Existing tokens invalidated"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify admin permissions for JWT operations",
+            "prevention": "Ensure proper access level"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list to get exact project-ref"
+          },
+          {
+            "error": "API_ERROR",
+            "solution": "JWT rotation may be temporarily unavailable - retry",
+            "prevention": "Schedule rotation during maintenance window"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": false,
+        "steps": [
+          "JWT rotation cannot be rolled back",
+          "Clients must update to new secret",
+          "Old tokens are permanently invalidated"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Automate client secret updates immediately after rotation",
+        "validation": "Test authentication with new secret before updating all clients",
+        "optimization": "Schedule rotation during low-traffic periods to minimize impact"
+      }
+    },
+    {
+      "id": "review-security-policies",
+      "task": "Review and understand security policies",
+      "category": "security",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli security:policies:list <project-ref> --format table",
+          "purpose": "List all Row Level Security policies",
+          "expected_output": "Table with RLS policies per table",
+          "success_criteria": "Policies listed successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli db:query <project-ref> \"SELECT schemaname, tablename, rowsecurity FROM pg_tables WHERE schemaname='public'\" --format table",
+          "purpose": "Check which tables have RLS enabled",
+          "expected_output": "Table showing RLS status per table",
+          "success_criteria": "RLS status displayed for all tables"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli security:audit <project-ref> --format json",
+          "purpose": "Check for security findings related to policies",
+          "expected_output": "Audit findings including policy recommendations",
+          "success_criteria": "Policy-related findings identified"
+        }
+      ],
+      "success_criteria": [
+        "All policies reviewed",
+        "RLS status understood for each table",
+        "Security gaps identified"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "QUERY_ERROR",
+            "solution": "Query syntax may need adjustment for PostgreSQL version",
+            "prevention": "Use standard information_schema queries"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify read permissions on security policies",
+            "prevention": "Ensure proper access level"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - read-only operations"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Export policies to JSON for documentation and version control",
+        "validation": "Cross-reference audit findings with policy list",
+        "optimization": "Review policies monthly or after major schema changes"
+      }
+    },
+    {
+      "id": "deploy-new-function",
+      "task": "Deploy a new edge function",
+      "category": "functions",
+      "difficulty": "medium",
+      "estimated_time": "4-6 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Function code prepared in TypeScript/JavaScript",
+        "Function file ready for deployment"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli functions:list <project-ref>",
+          "purpose": "View existing functions before deployment",
+          "expected_output": "List of deployed functions",
+          "success_criteria": "Function list retrieved"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli functions:deploy <project-ref> hello-world --file ./functions/hello-world/index.ts",
+          "purpose": "Deploy the new function",
+          "expected_output": "Deployment progress and function URL",
+          "success_criteria": "Function deployed successfully with URL"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli functions:list <project-ref>",
+          "purpose": "Verify function appears in list",
+          "expected_output": "List including new function",
+          "success_criteria": "New function visible with status ACTIVE"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli functions:invoke <project-ref> hello-world --payload '{\"name\":\"test\"}'",
+          "purpose": "Test the deployed function",
+          "expected_output": "Function response",
+          "success_criteria": "Function executes and returns expected result"
+        }
+      ],
+      "success_criteria": [
+        "Function deployed without errors",
+        "Function appears in functions:list",
+        "Function invokes successfully",
+        "Function URL accessible"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "FILE_NOT_FOUND",
+            "solution": "Verify function file path is correct",
+            "prevention": "Use absolute paths or verify current directory"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Function code may have syntax errors",
+            "prevention": "Test function locally before deploying"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Deployment can take 5-15s - wait for completion",
+            "prevention": "Expect longer deploy times for large functions"
+          },
+          {
+            "error": "ALREADY_EXISTS",
+            "solution": "Function name may be taken - use different name or redeploy",
+            "prevention": "Check functions:list before deploying new function"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "Deploy previous version of function to overwrite",
+          "Or delete function using management API if no longer needed"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Automate deployment in CI/CD pipeline with --yes flag equivalent",
+        "validation": "Write integration tests that invoke function after deployment",
+        "optimization": "Bundle dependencies to reduce cold start time"
+      }
+    },
+    {
+      "id": "test-existing-function",
+      "task": "Test and debug an existing edge function",
+      "category": "functions",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Function name",
+        "Test payload prepared"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli functions:list <project-ref>",
+          "purpose": "Verify function exists and is active",
+          "expected_output": "List including target function",
+          "success_criteria": "Function found with status ACTIVE"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli functions:invoke <project-ref> my-function --payload '{}'",
+          "purpose": "Test function with empty payload",
+          "expected_output": "Function response or error message",
+          "success_criteria": "Function executes (success or handled error)"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli functions:invoke <project-ref> my-function --payload '{\"key\":\"value\"}'",
+          "purpose": "Test function with actual payload",
+          "expected_output": "Function response with processed data",
+          "success_criteria": "Function returns expected result"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli logs:functions:list <project-ref>",
+          "purpose": "Check function logs for errors or debugging info",
+          "expected_output": "Recent function invocation logs",
+          "success_criteria": "Logs show function execution details"
+        }
+      ],
+      "success_criteria": [
+        "Function invokes successfully",
+        "Response matches expectations",
+        "Logs show no unexpected errors"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "NOT_FOUND",
+            "solution": "Function name may be incorrect - check functions:list",
+            "prevention": "Verify function name before invoking"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Payload may be malformed JSON",
+            "prevention": "Validate JSON payload before sending"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Function may be slow or hanging - check logs",
+            "prevention": "Optimize function code to reduce execution time"
+          },
+          {
+            "error": "INTERNAL_ERROR",
+            "solution": "Function code has runtime error - check logs",
+            "prevention": "Add error handling in function code"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - testing is read-only"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Create test suite with multiple payloads to validate function behavior",
+        "validation": "Assert on response structure and values in automated tests",
+        "optimization": "Use logs to identify performance bottlenecks in function code"
+      }
+    },
+    {
+      "id": "update-and-redeploy-function",
+      "task": "Update existing function and redeploy",
+      "category": "functions",
+      "difficulty": "medium",
+      "estimated_time": "5-7 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Updated function code ready",
+        "Previous version tested"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli functions:invoke <project-ref> my-function --payload '{\"test\":true}'",
+          "purpose": "Test current version before update",
+          "expected_output": "Current function behavior",
+          "success_criteria": "Current version works as expected"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli functions:deploy <project-ref> my-function --file ./functions/my-function/index.ts",
+          "purpose": "Deploy updated function code",
+          "expected_output": "Deployment success with new version",
+          "success_criteria": "Function redeployed successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli functions:invoke <project-ref> my-function --payload '{\"test\":true}'",
+          "purpose": "Test updated version",
+          "expected_output": "New function behavior",
+          "success_criteria": "Updated version works with new features"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli logs:functions:list <project-ref>",
+          "purpose": "Check logs for any deployment issues",
+          "expected_output": "Recent deployment and invocation logs",
+          "success_criteria": "No errors in logs"
+        }
+      ],
+      "success_criteria": [
+        "Function redeployed successfully",
+        "New version executes correctly",
+        "No errors in logs",
+        "New features working as expected"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "New code may have syntax errors - review and fix",
+            "prevention": "Test code locally before deploying"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Deployment taking longer than expected - wait",
+            "prevention": "Expect 5-15s for deployment"
+          },
+          {
+            "error": "INTERNAL_ERROR",
+            "solution": "Runtime error in new code - check logs and fix",
+            "prevention": "Add comprehensive error handling in function"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli functions:deploy <project-ref> my-function --file ./functions/my-function/index.ts.backup",
+          "Redeploy previous version from backup"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Keep previous version in version control for easy rollback",
+        "validation": "Run full test suite after redeployment",
+        "optimization": "Use canary deployments for gradual rollout of updates"
+      }
+    },
+    {
+      "id": "create-new-project",
+      "task": "Create a new Supabase project",
+      "category": "projects",
+      "difficulty": "medium",
+      "estimated_time": "3-5 minutes (plus 60-180s provisioning)",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Organization ID known",
+        "Project name decided",
+        "Region selected"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli config:doctor",
+          "purpose": "Verify CLI is configured correctly",
+          "expected_output": "Configuration status - all checks should pass",
+          "success_criteria": "Authentication valid, config loaded"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli projects:list",
+          "purpose": "View existing projects and verify access",
+          "expected_output": "List of current projects",
+          "success_criteria": "Projects listed successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli projects:create --name 'My New Project' --organization org-abc123 --region us-east-1",
+          "purpose": "Create the new project",
+          "expected_output": "Project creation initiated with project-ref",
+          "success_criteria": "Project-ref returned, status PROVISIONING"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli projects:get <new-project-ref>",
+          "purpose": "Monitor provisioning status",
+          "expected_output": "Project details with status",
+          "success_criteria": "Status changes from PROVISIONING to ACTIVE_HEALTHY"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli db:query <new-project-ref> 'SELECT version()'",
+          "purpose": "Verify database is accessible",
+          "expected_output": "PostgreSQL version",
+          "success_criteria": "Query executes successfully"
+        }
+      ],
+      "success_criteria": [
+        "Project created successfully",
+        "Project status is ACTIVE_HEALTHY",
+        "Database is accessible and queryable"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Check organization ID and region are valid",
+            "prevention": "Use valid regions: us-east-1, us-west-1, eu-west-1, ap-southeast-1"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify you have permissions to create projects in organization",
+            "prevention": "Check organization access before creation"
+          },
+          {
+            "error": "PROJECT_CREATION_FAILED",
+            "solution": "Retry creation or contact support if persistent",
+            "prevention": "Ensure organization has available project quota"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Project creation can take 60-180s - poll projects:get for status",
+            "prevention": "Expect long provisioning time, use polling"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli projects:delete <new-project-ref> --yes"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Poll projects:get every 15s until status=ACTIVE_HEALTHY",
+        "validation": "Run db:query to confirm database accessibility after creation",
+        "optimization": "Choose region closest to users for best performance"
+      }
+    },
+    {
+      "id": "pause-resume-project",
+      "task": "Pause and resume a project to save costs",
+      "category": "projects",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Understanding that paused projects are not accessible"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project current status",
+          "expected_output": "Project details with status ACTIVE_HEALTHY",
+          "success_criteria": "Project is currently active"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli projects:pause <project-ref>",
+          "purpose": "Pause the project (requires confirmation)",
+          "expected_output": "Confirmation prompt, then pause confirmation",
+          "success_criteria": "Project paused successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project is paused",
+          "expected_output": "Project status PAUSED",
+          "success_criteria": "Status shows PAUSED"
+        }
+      ],
+      "success_criteria": [
+        "Project pauses successfully",
+        "Project status reflects paused state",
+        "Project can be resumed when needed"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Project may already be paused",
+            "prevention": "Check project status before pausing"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list to get exact project-ref"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify you have pause/resume permissions",
+            "prevention": "Ensure admin access to project"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "Resume project immediately if paused by mistake (use dashboard or API)"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Pause dev/staging projects overnight to save costs",
+        "validation": "Verify project status after pause/resume operations",
+        "optimization": "Use pause for development environments during off-hours"
+      }
+    },
+    {
+      "id": "delete-project-safely",
+      "task": "Safely delete a project with backups",
+      "category": "projects",
+      "difficulty": "complex",
+      "estimated_time": "5-8 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Confirmation that project should be deleted (DESTRUCTIVE)",
+        "Decision on whether to keep final backup"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli projects:get <project-ref>",
+          "purpose": "Verify project details before deletion",
+          "expected_output": "Full project details",
+          "success_criteria": "Confirmed this is the correct project to delete"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli backup:create <project-ref> --description 'Final backup before deletion'",
+          "purpose": "Create final backup before deletion",
+          "expected_output": "Backup ID",
+          "success_criteria": "Backup created successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli backup:get <project-ref> <backup-id>",
+          "purpose": "Verify backup completed",
+          "expected_output": "Backup status COMPLETED",
+          "success_criteria": "Backup is complete and downloadable"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli db:query <project-ref> \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'\"",
+          "purpose": "Document table count for verification",
+          "expected_output": "Number of tables",
+          "success_criteria": "Count recorded for future reference"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli projects:delete <project-ref>",
+          "purpose": "Delete the project (requires confirmation)",
+          "expected_output": "Confirmation prompt, then deletion confirmation",
+          "success_criteria": "Project deleted successfully"
+        },
+        {
+          "step": 6,
+          "command": "supabase-cli projects:list",
+          "purpose": "Verify project no longer appears",
+          "expected_output": "Project list without deleted project",
+          "success_criteria": "Deleted project not in list"
+        }
+      ],
+      "success_criteria": [
+        "Final backup created and verified",
+        "Project deleted successfully",
+        "Project no longer appears in projects:list",
+        "Backup retained for recovery if needed"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "PROJECT_DELETION_FAILED",
+            "solution": "Project may have active resources - remove dependencies first",
+            "prevention": "Delete replicas, functions, and other resources before project"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify you have delete permissions",
+            "prevention": "Ensure admin/owner access to project"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Project may already be deleted",
+            "prevention": "Verify project exists with projects:list first"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": false,
+        "steps": [
+          "Project deletion is permanent",
+          "Can create new project and restore from backup",
+          "Backup must be downloaded before deletion if needed for restore"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Script to backup all data before deletion: tables, functions, policies",
+        "validation": "Triple-check project-ref before deletion - this is irreversible",
+        "optimization": "Consider pausing instead of deleting for temporary cost savings"
+      }
+    },
+    {
+      "id": "setup-storage-bucket",
+      "task": "Set up storage bucket with permissions",
+      "category": "storage",
+      "difficulty": "medium",
+      "estimated_time": "4-6 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Bucket name decided",
+        "Public/private access decision made"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli storage:buckets:list <project-ref>",
+          "purpose": "View existing buckets",
+          "expected_output": "List of current storage buckets",
+          "success_criteria": "Bucket list retrieved"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli storage:buckets:create <project-ref> --name 'avatars' --public false",
+          "purpose": "Create new private bucket",
+          "expected_output": "Bucket ID and confirmation",
+          "success_criteria": "Bucket created successfully"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli storage:buckets:get <project-ref> avatars",
+          "purpose": "Verify bucket configuration",
+          "expected_output": "Bucket details with public: false",
+          "success_criteria": "Bucket settings match expectations"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli storage:policies:list <project-ref>",
+          "purpose": "View current storage policies",
+          "expected_output": "List of storage access policies",
+          "success_criteria": "Policies listed"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli storage:policies:set <project-ref> --bucket avatars --policy 'CREATE POLICY authenticated_users ON storage.objects FOR ALL USING (auth.role() = authenticated)'",
+          "purpose": "Set access policy for bucket",
+          "expected_output": "Policy creation confirmation",
+          "success_criteria": "Policy applied successfully"
+        }
+      ],
+      "success_criteria": [
+        "Bucket created successfully",
+        "Access level configured correctly",
+        "Policies set appropriately",
+        "Bucket appears in buckets:list"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "ALREADY_EXISTS",
+            "solution": "Bucket name must be unique - choose different name",
+            "prevention": "Check storage:buckets:list before creating"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Bucket name may contain invalid characters",
+            "prevention": "Use lowercase alphanumeric and hyphens only"
+          },
+          {
+            "error": "BUCKET_NOT_FOUND",
+            "solution": "Bucket may not exist for policy creation",
+            "prevention": "Create bucket before setting policies"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "supabase-cli storage:buckets:delete <project-ref> avatars --yes"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Create buckets for different content types: avatars, documents, images",
+        "validation": "Test upload/download after bucket creation to verify policies",
+        "optimization": "Use public buckets for static assets, private for user data"
+      }
+    },
+    {
+      "id": "configure-bucket-permissions",
+      "task": "Configure fine-grained bucket permissions",
+      "category": "storage",
+      "difficulty": "medium",
+      "estimated_time": "5-7 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Bucket exists",
+        "Understanding of RLS policies"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli storage:buckets:get <project-ref> documents",
+          "purpose": "Verify bucket exists and view current settings",
+          "expected_output": "Bucket details",
+          "success_criteria": "Bucket exists"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli storage:policies:list <project-ref>",
+          "purpose": "Review current storage policies",
+          "expected_output": "List of policies",
+          "success_criteria": "Current policies displayed"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli storage:policies:set <project-ref> --bucket documents --policy 'CREATE POLICY users_read_own ON storage.objects FOR SELECT USING (auth.uid() = owner)'",
+          "purpose": "Set policy for users to read own files",
+          "expected_output": "Policy creation confirmation",
+          "success_criteria": "Read policy created"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli storage:policies:set <project-ref> --bucket documents --policy 'CREATE POLICY users_write_own ON storage.objects FOR INSERT WITH CHECK (auth.uid() = owner)'",
+          "purpose": "Set policy for users to upload to own folder",
+          "expected_output": "Policy creation confirmation",
+          "success_criteria": "Write policy created"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli storage:policies:list <project-ref>",
+          "purpose": "Verify policies were created",
+          "expected_output": "List including new policies",
+          "success_criteria": "New policies appear in list"
+        }
+      ],
+      "success_criteria": [
+        "Policies created successfully",
+        "Access control configured correctly",
+        "Users can access only their own files"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "BUCKET_NOT_FOUND",
+            "solution": "Verify bucket name is correct",
+            "prevention": "Check storage:buckets:list for exact bucket name"
+          },
+          {
+            "error": "VALIDATION_ERROR",
+            "solution": "Policy SQL may have syntax errors",
+            "prevention": "Test policy SQL in SQL editor first"
+          },
+          {
+            "error": "STORAGE_ERROR",
+            "solution": "Policy may conflict with existing policies",
+            "prevention": "Review existing policies before adding new ones"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "Drop policies using SQL: DROP POLICY policy_name ON storage.objects",
+          "Or recreate bucket to reset all policies"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Create policy templates for common access patterns",
+        "validation": "Test policies with different user roles to verify access control",
+        "optimization": "Use separate policies for SELECT, INSERT, UPDATE, DELETE operations"
+      }
+    },
+    {
+      "id": "setup-log-monitoring",
+      "task": "Set up log monitoring for troubleshooting",
+      "category": "monitoring",
+      "difficulty": "simple",
+      "estimated_time": "3-4 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli logs:api:list <project-ref> --format table",
+          "purpose": "View recent API request logs",
+          "expected_output": "Table with recent API requests",
+          "success_criteria": "API logs displayed"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli logs:errors:list <project-ref> --format table",
+          "purpose": "Check for recent errors",
+          "expected_output": "Table with error logs (may be empty)",
+          "success_criteria": "Error logs retrieved"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli logs:functions:list <project-ref> --format table",
+          "purpose": "Review function execution logs",
+          "expected_output": "Table with function invocation logs",
+          "success_criteria": "Function logs displayed"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli monitor:health <project-ref>",
+          "purpose": "Check overall project health",
+          "expected_output": "Health status for all services",
+          "success_criteria": "All services healthy"
+        }
+      ],
+      "success_criteria": [
+        "Logs accessible for all services",
+        "Error logs reviewed",
+        "Health status confirmed",
+        "Monitoring baseline established"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify token has log read permissions",
+            "prevention": "Ensure proper access level"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list to get exact project-ref"
+          },
+          {
+            "error": "TIMEOUT",
+            "solution": "Large log queries can take time - wait or filter results",
+            "prevention": "Use date range filters for faster queries"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - read-only operations"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Schedule regular log checks to catch issues early",
+        "validation": "Look for patterns in error logs to identify recurring issues",
+        "optimization": "Filter logs by time range and severity to reduce noise"
+      }
+    },
+    {
+      "id": "view-metrics-performance",
+      "task": "View project metrics and performance data",
+      "category": "monitoring",
+      "difficulty": "simple",
+      "estimated_time": "2-3 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli monitor:metrics <project-ref> --format json",
+          "purpose": "Get comprehensive metrics data",
+          "expected_output": "JSON with metrics for CPU, memory, connections, etc.",
+          "success_criteria": "Metrics retrieved successfully"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli monitor:health <project-ref>",
+          "purpose": "Check service health status",
+          "expected_output": "Health status for database, API, auth, storage",
+          "success_criteria": "All services reporting healthy"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:query <project-ref> 'SELECT count(*) FROM pg_stat_activity'",
+          "purpose": "Check active database connections",
+          "expected_output": "Number of active connections",
+          "success_criteria": "Connection count within limits"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli logs:api:list <project-ref> --format table",
+          "purpose": "Review recent API activity",
+          "expected_output": "Recent API requests with response times",
+          "success_criteria": "API performance looks normal"
+        }
+      ],
+      "success_criteria": [
+        "Metrics retrieved successfully",
+        "All services healthy",
+        "Resource usage within normal ranges",
+        "No performance anomalies detected"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "TIMEOUT",
+            "solution": "Metrics query may take time - wait or retry",
+            "prevention": "Metrics collection can take 3-5s"
+          },
+          {
+            "error": "UNAUTHORIZED",
+            "solution": "Verify token has monitoring permissions",
+            "prevention": "Ensure proper access level"
+          },
+          {
+            "error": "PROJECT_NOT_FOUND",
+            "solution": "Verify project-ref is correct",
+            "prevention": "Use projects:list first"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - read-only operations"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Export metrics to monitoring system for trending and alerting",
+        "validation": "Compare current metrics to historical baselines",
+        "optimization": "Schedule metric collection every 5-15 minutes for dashboards"
+      }
+    },
+    {
+      "id": "troubleshoot-common-issues",
+      "task": "Troubleshoot common project issues",
+      "category": "monitoring",
+      "difficulty": "medium",
+      "estimated_time": "5-10 minutes",
+      "prerequisites": [
+        "SUPABASE_ACCESS_TOKEN set",
+        "Project reference ID",
+        "Description of the issue"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "command": "supabase-cli monitor:health <project-ref>",
+          "purpose": "Check overall system health",
+          "expected_output": "Health status for all services",
+          "success_criteria": "Identify which services are unhealthy"
+        },
+        {
+          "step": 2,
+          "command": "supabase-cli logs:errors:list <project-ref> --format table",
+          "purpose": "Review recent errors",
+          "expected_output": "Recent error logs with details",
+          "success_criteria": "Error patterns identified"
+        },
+        {
+          "step": 3,
+          "command": "supabase-cli db:query <project-ref> 'SELECT state, count(*) FROM pg_stat_activity GROUP BY state'",
+          "purpose": "Check database connection states",
+          "expected_output": "Connection state distribution",
+          "success_criteria": "Identify connection issues (too many idle, waiting, etc.)"
+        },
+        {
+          "step": 4,
+          "command": "supabase-cli security:audit <project-ref>",
+          "purpose": "Check for security-related issues",
+          "expected_output": "Security audit findings",
+          "success_criteria": "Security issues identified if any"
+        },
+        {
+          "step": 5,
+          "command": "supabase-cli logs:api:list <project-ref>",
+          "purpose": "Review API logs for patterns",
+          "expected_output": "Recent API requests and errors",
+          "success_criteria": "API error patterns identified"
+        },
+        {
+          "step": 6,
+          "command": "supabase-cli config:doctor",
+          "purpose": "Verify CLI configuration is correct",
+          "expected_output": "Configuration health check results",
+          "success_criteria": "CLI configuration issues identified"
+        }
+      ],
+      "success_criteria": [
+        "Issue root cause identified",
+        "Services health status understood",
+        "Logs reviewed for error patterns",
+        "Action plan for resolution created"
+      ],
+      "error_handling": {
+        "common_errors": [
+          {
+            "error": "CONNECTION_ERROR",
+            "solution": "Check network connectivity and project status",
+            "prevention": "Verify project is active and not paused"
+          },
+          {
+            "error": "RATE_LIMIT",
+            "solution": "Too many requests - implement backoff or upgrade plan",
+            "prevention": "Monitor API usage and implement rate limiting in client"
+          },
+          {
+            "error": "DATABASE_ERROR",
+            "solution": "Check connection limits and query performance",
+            "prevention": "Monitor active connections and optimize slow queries"
+          }
+        ]
+      },
+      "rollback": {
+        "can_rollback": true,
+        "steps": [
+          "No rollback needed - diagnostic operations only"
+        ]
+      },
+      "ai_tips": {
+        "automation": "Create troubleshooting runbook with these commands",
+        "validation": "Cross-reference multiple log sources to confirm issue cause",
+        "optimization": "Start with health check, then narrow down to specific service logs"
+      }
+    }
+  ]
+}

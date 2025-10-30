@@ -1,12 +1,75 @@
 #!/usr/bin/env node
 
+// Performance optimization: Directly check for version/help before loading oclif
+const args = process.argv.slice(2)
+const firstArg = args[0]
+
+// Handle --version quickly without loading oclif
+if (firstArg === '--version' || firstArg === '-v') {
+  const { version } = require('../package.json')
+  const platform = require('os').platform()
+  const arch = require('os').arch()
+  const nodeVersion = process.version
+  console.log(`@coastal-programs/supabase-cli/${version} ${platform}-${arch} node-${nodeVersion}`)
+  process.exit(0)
+}
+
+// Handle --help with minimal overhead
+if (firstArg === '--help' || firstArg === '-h' || firstArg === 'help' || !firstArg) {
+  const chalk = require('chalk')
+  const { version, description } = require('../package.json')
+
+  console.log(`
+${chalk.bold('Supabase CLI')} v${version}
+${description}
+
+${chalk.bold('USAGE')}
+  $ supabase-cli [COMMAND]
+
+${chalk.bold('TOPICS')}
+  ${chalk.cyan('projects')}    Manage Supabase projects
+  ${chalk.cyan('db')}           Database operations and management
+  ${chalk.cyan('functions')}   Edge Functions deployment and management
+  ${chalk.cyan('migrations')}  Database migration management
+  ${chalk.cyan('branches')}    Preview branches management
+  ${chalk.cyan('storage')}     Storage buckets and policies
+  ${chalk.cyan('security')}    Security audit and compliance
+  ${chalk.cyan('backup')}      Backup management (read-only)
+  ${chalk.cyan('config')}      CLI configuration
+
+${chalk.bold('COMMANDS')}
+  Use 'supabase-cli [TOPIC] --help' for more information about a topic
+
+${chalk.bold('EXAMPLES')}
+  $ supabase-cli projects:list
+  $ supabase-cli db:query "SELECT * FROM users"
+  $ supabase-cli functions:deploy my-function
+
+${chalk.bold('OPTIONS')}
+  -v, --version    Show CLI version
+  -h, --help       Show help
+  --debug          Enable debug output
+  -f, --format     Output format (json, table, list, yaml)
+
+For more information, visit: https://github.com/coastal-programs/supabase-cli
+`)
+  process.exit(0)
+}
+
+// For all other commands, load oclif normally
 const oclif = require('@oclif/core')
-
 const path = require('path')
-const project = path.join(__dirname, '..', 'tsconfig.json')
+const fs = require('fs')
 
-// In dev, use ts-node and dev plugins
-require('ts-node').register({project})
+// Check if we have a compiled dist folder
+const distPath = path.join(__dirname, '..', 'dist')
+const hasCompiledCode = fs.existsSync(distPath)
 
-// In production, this just runs the compiled code
+if (!hasCompiledCode) {
+  // Development mode: use ts-node
+  const project = path.join(__dirname, '..', 'tsconfig.json')
+  require('ts-node').register({project})
+}
+
+// Run oclif - it will use compiled code if available, ts-node if not
 oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'))

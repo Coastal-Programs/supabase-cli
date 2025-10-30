@@ -1,7 +1,8 @@
 import { Args, Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { AutomationFlags, ConfirmationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
 import { cache } from '../../cache'
 import { type DeployFunctionConfig, deployFunction } from '../../supabase'
 
@@ -18,9 +19,9 @@ export default class FunctionsDeploy extends BaseCommand {
   static description = 'Deploy an Edge Function'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> my-function --file index.ts',
-    '<%= config.bin %> <%= command.id %> my-function --code "Deno.serve(() => new Response(\'Hello\'))"',
-    '<%= config.bin %> <%= command.id %> my-function --file index.ts --verify-jwt false',
+    '<%= config.bin %> <%= command.id %> my-function --file index.ts --project my-project',
+    '<%= config.bin %> <%= command.id %> my-function --code "Deno.serve(() => new Response(\'Hello\'))" --project my-project',
+    '<%= config.bin %> <%= command.id %> my-function --file index.ts --verify-jwt false -p my-project',
   ]
 
   static flags = {
@@ -28,6 +29,7 @@ export default class FunctionsDeploy extends BaseCommand {
     ...ProjectFlags,
     ...OutputFormatFlags,
     ...AutomationFlags,
+    ...ConfirmationFlags,
     code: Flags.string({
       char: 'c',
       description: 'TypeScript/JavaScript code inline',
@@ -60,10 +62,11 @@ export default class FunctionsDeploy extends BaseCommand {
       const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
-        this.error(
-          'Project reference required. Use --project flag or set SUPABASE_PROJECT_REF environment variable.',
-          { exit: 1 },
-        )
+        this.error(ErrorMessages.PROJECT_REQUIRED(), { exit: 1 })
+      }
+
+      if (!flags.quiet) {
+        this.header('Deploy Edge Function')
       }
 
       // Get function code from file or inline
@@ -76,13 +79,13 @@ export default class FunctionsDeploy extends BaseCommand {
         try {
           const filePath = path.resolve(flags.file)
           code = await fs.readFile(filePath, 'utf8')
-        } catch {
-          this.error(`Failed to read file: ${flags.file}`, { exit: 1 })
+        } catch (error) {
+          this.error(ErrorMessages.FILE_READ_ERROR(flags.file, String(error)), { exit: 1 })
         }
       }
 
       if (!code || code.trim().length === 0) {
-        this.error('Function code required. Provide via --code or --file flag.', { exit: 1 })
+        this.error(ErrorMessages.REQUIRED_FIELD('Function code (--code or --file)'), { exit: 1 })
       }
 
       // Build deployment config
@@ -111,22 +114,21 @@ export default class FunctionsDeploy extends BaseCommand {
             content: importMapContent,
             name: 'import_map.json',
           })
-        } catch {
-          this.error(`Failed to read import map: ${flags['import-map']}`, { exit: 1 })
+        } catch (error) {
+          this.error(ErrorMessages.FILE_READ_ERROR(flags['import-map'], String(error)), { exit: 1 })
         }
       }
 
-      // Confirmation prompt (unless --force or --yes)
-      if (!flags.force && !flags.yes) {
+      // Confirmation prompt
+      if (!flags.yes && !flags.force && !flags['no-interactive']) {
         const confirmed = await this.confirm(
           `Deploy function '${args.slug}' to project '${projectRef}'?`,
           true,
         )
 
         if (!confirmed) {
-          this.warning('Deployment cancelled')
+          this.warning(WarningMessages.OPERATION_CANCELLED())
           process.exit(0)
-          return
         }
       }
 
@@ -134,17 +136,13 @@ export default class FunctionsDeploy extends BaseCommand {
       const result = await this.spinner(
         'Deploying function...',
         async () => deployFunction(projectRef, config),
-        'Function deployed successfully',
+        SuccessMessages.FUNCTION_DEPLOYED(args.slug),
       )
 
       // Invalidate functions cache
       cache.delete(`functions:${projectRef}`)
 
       // Output result
-      if (!flags.quiet) {
-        this.header('Function Deployed')
-      }
-
       this.output({
         id: result.id,
         name: result.name,
@@ -156,7 +154,8 @@ export default class FunctionsDeploy extends BaseCommand {
 
       if (!flags.quiet) {
         this.divider()
-        this.success(`Function '${args.slug}' deployed successfully (version: ${result.version})`)
+        this.success(SuccessMessages.FUNCTION_DEPLOYED(args.slug))
+        this.info(`Version: ${result.version}`)
       }
 
       process.exit(0)

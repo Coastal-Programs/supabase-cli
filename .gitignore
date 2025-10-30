@@ -25,12 +25,19 @@ coverage/
 .nyc_output/
 *.lcov
 test_output.txt
+test-results.json
+test-results.txt
 .disabled-tests/
 
 # Temporary files
 *.bak
 *.tmp
+*.temp
 tmp/
+nul
+
+# Package files
+*.tgz
 
 # Environment
 .env

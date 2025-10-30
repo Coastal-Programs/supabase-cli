@@ -1,0 +1,18 @@
+<svg width="1200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .ascii-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #3ECF8E;
+      letter-spacing: 0px;
+    }
+  </style>
+
+  <text x="10" y="20" class="ascii-text">███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗    ██████╗██╗     ██╗</text>
+  <text x="10" y="35" class="ascii-text">██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝   ██╔════╝██║     ██║</text>
+  <text x="10" y="50" class="ascii-text">███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗     ██║     ██║     ██║</text>
+  <text x="10" y="65" class="ascii-text">╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝     ██║     ██║     ██║</text>
+  <text x="10" y="80" class="ascii-text">███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗   ╚██████╗███████╗██║</text>
+  <text x="10" y="95" class="ascii-text">╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝    ╚═════╝╚══════╝╚═╝</text>
+</svg>

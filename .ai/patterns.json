@@ -1,0 +1,1077 @@
+{
+  "version": "0.1.0",
+  "updated_at": "2024-10-29T00:00:00Z",
+  "pattern_count": 19,
+  "patterns": [
+    {
+      "id": "list-then-get",
+      "name": "List Then Get Details",
+      "description": "List resources to discover IDs, then retrieve detailed information about specific items",
+      "when_to_use": [
+        "You need to find a specific resource but don't know its ID",
+        "You want to inspect details of one item from a collection",
+        "You need to verify a resource exists before operating on it"
+      ],
+      "commands": [
+        {"command": "projects:list", "purpose": "Discover available project references"},
+        {"command": "projects:get", "purpose": "Get detailed configuration and status of specific project"}
+      ],
+      "variations": [
+        "backup:list → backup:get (for backup inspection)",
+        "functions:list → functions:invoke (for function testing)",
+        "storage:buckets:list → storage:buckets:get (for bucket details)",
+        "branches:list → branches:create (to see existing before creating new)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Fetching all details when only list-level info is needed (wasteful)",
+          "Not caching list results between get operations",
+          "Calling get repeatedly instead of using list with filters"
+        ],
+        "optimization": "Cache list results (5min TTL) and reuse for multiple get operations",
+        "typical_time": "< 4s for list+get sequence",
+        "best_practices": [
+          "Always list first to verify resource exists",
+          "Use --format json for programmatic parsing",
+          "Filter list results before calling multiple gets"
+        ]
+      },
+      "example": {
+        "scenario": "Find project named 'production-api' and inspect its configuration",
+        "commands": [
+          "supabase-cli projects:list --format json | jq -r '.[] | select(.name==\"production-api\") | .ref'",
+          "supabase-cli projects:get abc123xyz --format json"
+        ],
+        "explanation": "First command lists all projects and filters for the one we want, second gets complete details. This is more efficient than fetching details for every project."
+      }
+    },
+    {
+      "id": "create-verify",
+      "name": "Create and Verify",
+      "description": "Create a resource then verify it was successfully created and is in the expected state",
+      "when_to_use": [
+        "Creating critical resources that must be confirmed",
+        "When creation is async and status needs checking",
+        "Before proceeding with dependent operations"
+      ],
+      "commands": [
+        {"command": "backup:create", "purpose": "Create database backup"},
+        {"command": "backup:get", "purpose": "Verify backup completed successfully"}
+      ],
+      "variations": [
+        "projects:create → projects:get (verify new project provisioned)",
+        "storage:buckets:create → storage:buckets:list (confirm bucket exists)",
+        "db:replicas:create → db:replicas:list (verify replica ready)",
+        "branches:create → branches:list (confirm branch created)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Assuming creation succeeded without verification",
+          "Not waiting for async operations to complete",
+          "Proceeding with next steps before resource is ready"
+        ],
+        "optimization": "Poll get/list endpoint with exponential backoff until status is 'ready'",
+        "typical_time": "< 65s for creation + verification",
+        "best_practices": [
+          "Check for 'status' field in creation response",
+          "Wait for status='ready' before using resource",
+          "Set timeout for long-running operations (e.g., 180s for project creation)"
+        ]
+      },
+      "example": {
+        "scenario": "Create backup before major database migration and verify it completed",
+        "commands": [
+          "supabase-cli backup:create abc123xyz --description 'Pre-migration backup' --format json",
+          "# Extract backup_id from response, then verify",
+          "supabase-cli backup:get abc123xyz backup_abc123 --format json | jq -r '.status'",
+          "# Proceed with migration only if status is 'completed'"
+        ],
+        "explanation": "Creates backup, extracts ID from response, then verifies completion status before proceeding with risky operation"
+      }
+    },
+    {
+      "id": "backup-before-destructive",
+      "name": "Backup Before Destructive Operation",
+      "description": "Always create a backup before any destructive operation to enable rollback",
+      "when_to_use": [
+        "Before any operation marked as 'destructive' in command catalog",
+        "Before applying database migrations",
+        "Before major configuration changes"
+      ],
+      "commands": [
+        {"command": "backup:create", "purpose": "Create restore point"},
+        {"command": "backup:get", "purpose": "Verify backup completed"},
+        {"command": "<destructive-operation>", "purpose": "Perform the risky change"},
+        {"command": "backup:restore", "purpose": "Rollback if needed (only if operation failed)"}
+      ],
+      "variations": [
+        "backup:create → db:query (before UPDATE/DELETE queries)",
+        "backup:create → migrations:apply (before schema changes)",
+        "backup:create → projects:delete (safety measure)",
+        "backup:create → backup:restore (restoring older backup)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Skipping backup for 'small' changes",
+          "Not verifying backup completed before proceeding",
+          "Deleting old backup before verifying new one works"
+        ],
+        "optimization": "Run backup:create async while preparing destructive operation",
+        "typical_time": "< 75s (60s backup + 15s operation)",
+        "best_practices": [
+          "ALWAYS backup before destructive operations",
+          "Tag backups with operation description",
+          "Keep backup for 24-48 hours after operation",
+          "Test restore process periodically"
+        ]
+      },
+      "example": {
+        "scenario": "Apply database migration that drops columns",
+        "commands": [
+          "# Step 1: Create backup",
+          "supabase-cli backup:create abc123xyz --description 'Pre-migration: drop unused columns' --format json",
+          "# Step 2: Verify backup",
+          "supabase-cli backup:get abc123xyz backup_abc123 --format json",
+          "# Step 3: Apply migration only if backup status is 'completed'",
+          "supabase-cli migrations:apply abc123xyz --file ./migrations/002_drop_columns.sql",
+          "# Step 4: If migration fails, restore from backup",
+          "supabase-cli backup:restore abc123xyz backup_abc123 --yes"
+        ],
+        "explanation": "Creates safety backup before schema change. If migration fails, can restore to pre-migration state. Without backup, data loss would be permanent."
+      }
+    },
+    {
+      "id": "security-audit-remediate",
+      "name": "Security Audit and Remediation",
+      "description": "Run security audit, review findings by severity, apply fixes, then re-audit to verify",
+      "when_to_use": [
+        "Before production deployment",
+        "Regular security compliance checks",
+        "After major configuration changes",
+        "When investigating security incidents"
+      ],
+      "commands": [
+        {"command": "security:audit", "purpose": "Identify security vulnerabilities"},
+        {"command": "security:policies:list", "purpose": "Review current security policies"},
+        {"command": "security:restrictions:add", "purpose": "Apply IP restrictions if needed"},
+        {"command": "security:audit", "purpose": "Re-audit to verify fixes"}
+      ],
+      "variations": [
+        "security:audit → storage:policies:set (fix storage policy issues)",
+        "security:audit → auth:service:config (fix auth configuration)",
+        "security:audit → db:config:set (fix database settings)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Ignoring medium/low severity findings",
+          "Not re-auditing after fixes",
+          "Applying fixes without understanding impact",
+          "Fixing symptoms instead of root causes"
+        ],
+        "optimization": "Prioritize by severity: critical → high → medium → low",
+        "typical_time": "< 20s for full audit cycle",
+        "best_practices": [
+          "Run audit before every production deployment",
+          "Document all findings and remediation steps",
+          "Set up automated audits in CI/CD",
+          "Track findings over time to measure security posture"
+        ]
+      },
+      "example": {
+        "scenario": "Pre-production security check reveals missing IP restrictions and weak policies",
+        "commands": [
+          "# Step 1: Run initial audit",
+          "supabase-cli security:audit abc123xyz --format json > audit_initial.json",
+          "# Step 2: Review findings (color-coded by severity)",
+          "cat audit_initial.json | jq -r '.[] | select(.severity==\"critical\" or .severity==\"high\")'",
+          "# Step 3: Add IP restrictions for critical finding",
+          "supabase-cli security:restrictions:add abc123xyz --cidr 203.0.113.0/24 --description 'Corporate network only'",
+          "# Step 4: Review current policies",
+          "supabase-cli security:policies:list abc123xyz --format json",
+          "# Step 5: Re-audit to verify fixes",
+          "supabase-cli security:audit abc123xyz --format json > audit_final.json",
+          "# Step 6: Compare before/after",
+          "diff audit_initial.json audit_final.json"
+        ],
+        "explanation": "Systematic approach to security: audit, prioritize by severity, fix critical issues, verify with re-audit. Compare before/after to confirm improvement."
+      }
+    },
+    {
+      "id": "function-deploy-test",
+      "name": "Function Deploy and Test",
+      "description": "Deploy edge function, verify deployment, test with sample payload, monitor logs",
+      "when_to_use": [
+        "Deploying new edge functions",
+        "Updating existing functions",
+        "Verifying function behavior in production",
+        "Debugging function issues"
+      ],
+      "commands": [
+        {"command": "functions:deploy", "purpose": "Deploy function code"},
+        {"command": "functions:list", "purpose": "Verify deployment succeeded"},
+        {"command": "functions:invoke", "purpose": "Test with sample payload"},
+        {"command": "logs:functions:list", "purpose": "Check execution logs"}
+      ],
+      "variations": [
+        "functions:deploy → logs:errors:list (check for deployment errors)",
+        "functions:invoke → monitor:metrics (check performance impact)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not testing after deployment",
+          "Deploying without checking logs",
+          "Not verifying function appears in list",
+          "Skipping payload validation"
+        ],
+        "optimization": "Deploy and invoke in quick succession while monitoring logs",
+        "typical_time": "< 25s for deploy+test cycle",
+        "best_practices": [
+          "Always test with realistic payload",
+          "Check logs for errors even if invoke succeeds",
+          "Verify function version number incremented",
+          "Test error handling with invalid payloads"
+        ]
+      },
+      "example": {
+        "scenario": "Deploy new webhook processor function and verify it works",
+        "commands": [
+          "# Step 1: Deploy function",
+          "supabase-cli functions:deploy abc123xyz process-webhook --file ./functions/process-webhook.ts",
+          "# Step 2: Verify it appears in list",
+          "supabase-cli functions:list abc123xyz --format json | jq -r '.[] | select(.name==\"process-webhook\")'",
+          "# Step 3: Test with sample payload",
+          "supabase-cli functions:invoke abc123xyz process-webhook --payload '{\"event\":\"test\",\"data\":{\"id\":123}}'",
+          "# Step 4: Check logs for any errors",
+          "supabase-cli logs:functions:list abc123xyz --format json | jq -r '.[] | select(.function==\"process-webhook\")'"
+        ],
+        "explanation": "Complete deployment workflow: deploy → verify → test → monitor. Don't assume deployment worked - verify each step."
+      }
+    },
+    {
+      "id": "database-query-inspect",
+      "name": "Inspect Schema Before Query",
+      "description": "Check database schema before running queries to understand structure and constraints",
+      "when_to_use": [
+        "Before running complex queries",
+        "When working with unfamiliar database",
+        "Before migrations or schema changes",
+        "Debugging query errors"
+      ],
+      "commands": [
+        {"command": "db:schema", "purpose": "View table structure and relationships"},
+        {"command": "db:extensions", "purpose": "Check available PostgreSQL extensions"},
+        {"command": "db:query", "purpose": "Execute informed query"}
+      ],
+      "variations": [
+        "db:schema → migrations:list (check migration history)",
+        "db:schema → db:query (understand structure before writing data)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Running queries without knowing schema",
+          "Assuming table/column names",
+          "Not checking constraints before INSERT/UPDATE",
+          "Ignoring foreign key relationships"
+        ],
+        "optimization": "Cache schema output for multiple query operations",
+        "typical_time": "< 5s for schema inspection + query",
+        "best_practices": [
+          "Always inspect schema when working with new project",
+          "Check for indexes before writing performance-critical queries",
+          "Understand relationships before JOIN operations",
+          "Verify column types before inserting data"
+        ]
+      },
+      "example": {
+        "scenario": "Need to query user data but unfamiliar with table structure",
+        "commands": [
+          "# Step 1: View schema to find user tables",
+          "supabase-cli db:schema abc123xyz --format json | jq -r '.tables[] | select(.name | contains(\"user\"))'",
+          "# Step 2: Check extensions (maybe using postgis for location data?)",
+          "supabase-cli db:extensions abc123xyz --format json",
+          "# Step 3: Run informed query",
+          "supabase-cli db:query abc123xyz 'SELECT id, email, created_at FROM users WHERE status = \\'active\\' LIMIT 10' --format table"
+        ],
+        "explanation": "Inspect schema first to understand table names, columns, and types. This prevents query errors and helps write more efficient queries."
+      }
+    },
+    {
+      "id": "replica-scale-read",
+      "name": "Scale Read Operations with Replicas",
+      "description": "Create read replicas in different regions to improve read performance and geographic distribution",
+      "when_to_use": [
+        "Scaling read-heavy workloads",
+        "Reducing latency for global users",
+        "Distributing query load",
+        "Disaster recovery preparation"
+      ],
+      "commands": [
+        {"command": "db:replicas:list", "purpose": "Check current replica configuration"},
+        {"command": "db:replicas:create", "purpose": "Create replica in target region"},
+        {"command": "db:replicas:list", "purpose": "Verify replica is ready"},
+        {"command": "monitor:metrics", "purpose": "Monitor replica lag and performance"}
+      ],
+      "variations": [
+        "db:replicas:create → db:config:set (configure replica-specific settings)",
+        "db:replicas:list → db:replicas:delete (remove unused replicas)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not checking replica status before directing traffic",
+          "Creating replicas in same region as primary",
+          "Not monitoring replication lag",
+          "Forgetting to update connection strings"
+        ],
+        "optimization": "Create replicas during off-peak hours (30-90s creation time)",
+        "typical_time": "< 95s for create+verify",
+        "best_practices": [
+          "Place replicas near users for lowest latency",
+          "Monitor replication lag continuously",
+          "Use replicas for SELECT queries only",
+          "Plan for at least 2 replicas for high availability"
+        ]
+      },
+      "example": {
+        "scenario": "Add EU read replica to reduce latency for European users",
+        "commands": [
+          "# Step 1: Check current replicas",
+          "supabase-cli db:replicas:list abc123xyz --format json",
+          "# Step 2: Create EU replica (primary is in us-east-1)",
+          "supabase-cli db:replicas:create abc123xyz --region eu-west-1 --format json",
+          "# Step 3: Poll until status is 'ready' (may take 60-90s)",
+          "while [[ $(supabase-cli db:replicas:list abc123xyz --format json | jq -r '.[] | select(.region==\"eu-west-1\") | .status') != \"ready\" ]]; do sleep 10; done",
+          "# Step 4: Monitor metrics to verify replica is working",
+          "supabase-cli monitor:metrics abc123xyz --format json | jq -r '.replicas[] | select(.region==\"eu-west-1\")'"
+        ],
+        "explanation": "Creates geo-distributed read replica and polls until ready. Monitors metrics to verify replication is working. Update app to route EU reads to new replica."
+      }
+    },
+    {
+      "id": "backup-lifecycle-full",
+      "name": "Complete Backup Lifecycle",
+      "description": "Full backup management: create schedule, create on-demand backup, verify, restore, cleanup",
+      "when_to_use": [
+        "Setting up backup strategy for new project",
+        "Implementing disaster recovery plan",
+        "Managing backup retention",
+        "Testing backup/restore procedures"
+      ],
+      "commands": [
+        {"command": "backup:schedule:list", "purpose": "Check current schedule"},
+        {"command": "backup:schedule:create", "purpose": "Set up automated backups"},
+        {"command": "backup:create", "purpose": "Create immediate backup"},
+        {"command": "backup:list", "purpose": "View all backups"},
+        {"command": "backup:restore", "purpose": "Restore when needed"},
+        {"command": "backup:delete", "purpose": "Clean up old backups"}
+      ],
+      "variations": [
+        "backup:pitr:restore (for point-in-time recovery instead of full backup)",
+        "backup:get (inspect specific backup before restore)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not testing restore procedures",
+          "Setting retention too short",
+          "Creating backups but never cleaning up old ones",
+          "Not verifying backup integrity"
+        ],
+        "optimization": "Schedule daily backups during low-traffic hours",
+        "typical_time": "< 10s for schedule/list, 60s for backup creation",
+        "best_practices": [
+          "Test restore at least monthly",
+          "Keep backups for 30+ days",
+          "Document restore procedures",
+          "Monitor backup success/failure",
+          "Tag backups with purpose/description"
+        ]
+      },
+      "example": {
+        "scenario": "Set up backup strategy for production database",
+        "commands": [
+          "# Step 1: Check if schedule exists",
+          "supabase-cli backup:schedule:list abc123xyz --format json",
+          "# Step 2: Create daily backup schedule",
+          "supabase-cli backup:schedule:create abc123xyz --frequency daily --retention 30 --format json",
+          "# Step 3: Create immediate backup for safety",
+          "supabase-cli backup:create abc123xyz --description 'Initial production backup' --format json",
+          "# Step 4: List all backups",
+          "supabase-cli backup:list abc123xyz --format json",
+          "# Step 5: Test restore to verify backup works (on test project!)",
+          "supabase-cli backup:restore test-project backup_abc123 --yes",
+          "# Step 6: Clean up old backups (keep last 30 days)",
+          "supabase-cli backup:list abc123xyz --format json | jq -r '.[] | select(.age_days > 30) | .id' | xargs -I {} supabase-cli backup:delete abc123xyz {} --yes"
+        ],
+        "explanation": "Complete backup lifecycle: schedule automated backups, create initial backup, test restore, implement retention policy. Regular testing ensures backups are usable in emergency."
+      }
+    },
+    {
+      "id": "migration-safe-apply",
+      "name": "Safe Database Migration",
+      "description": "Apply database migrations safely with backup, verification, and rollback capability",
+      "when_to_use": [
+        "Applying schema changes to production",
+        "Running data migrations",
+        "Updating database structure",
+        "Adding/removing constraints"
+      ],
+      "commands": [
+        {"command": "backup:create", "purpose": "Create pre-migration backup"},
+        {"command": "migrations:list", "purpose": "Check migration history"},
+        {"command": "db:schema", "purpose": "Verify current schema"},
+        {"command": "migrations:apply", "purpose": "Apply migration"},
+        {"command": "db:schema", "purpose": "Verify schema changes"},
+        {"command": "backup:restore", "purpose": "Rollback if needed"}
+      ],
+      "variations": [
+        "migrations:list → db:query (manual migration verification)",
+        "branches:create → migrations:apply (test on branch first)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Applying migrations without backup",
+          "Not testing migrations on dev/staging first",
+          "Skipping schema verification after migration",
+          "Not having rollback plan"
+        ],
+        "optimization": "Test migrations on branch before applying to production",
+        "typical_time": "< 100s (60s backup + 30s migration + 10s verify)",
+        "best_practices": [
+          "ALWAYS backup before migrations",
+          "Test on branch/staging first",
+          "Run during maintenance window",
+          "Verify schema after migration",
+          "Keep rollback backup for 48 hours",
+          "Document migration in backup description"
+        ]
+      },
+      "example": {
+        "scenario": "Add new indexed column to users table in production",
+        "commands": [
+          "# Step 1: Create backup with descriptive name",
+          "supabase-cli backup:create abc123xyz --description 'Pre-migration: add users.last_login_at index' --format json",
+          "# Step 2: Wait for backup to complete",
+          "supabase-cli backup:get abc123xyz backup_abc123 --format json | jq -r '.status'",
+          "# Step 3: Check migration history",
+          "supabase-cli migrations:list abc123xyz --format json",
+          "# Step 4: Capture current schema",
+          "supabase-cli db:schema abc123xyz --format json > schema_before.json",
+          "# Step 5: Apply migration",
+          "supabase-cli migrations:apply abc123xyz --file ./migrations/003_add_last_login_index.sql",
+          "# Step 6: Verify schema changed as expected",
+          "supabase-cli db:schema abc123xyz --format json > schema_after.json",
+          "diff schema_before.json schema_after.json",
+          "# Step 7: If migration failed, restore backup",
+          "# supabase-cli backup:restore abc123xyz backup_abc123 --yes"
+        ],
+        "explanation": "Safety-first migration: backup, verify current state, apply change, verify new state, keep rollback option. Compare schemas to confirm expected changes only."
+      }
+    },
+    {
+      "id": "storage-bucket-setup",
+      "name": "Storage Bucket Setup and Configuration",
+      "description": "Create storage bucket, configure policies, and verify access controls",
+      "when_to_use": [
+        "Setting up file storage for new feature",
+        "Configuring public/private file access",
+        "Implementing upload functionality",
+        "Managing storage security"
+      ],
+      "commands": [
+        {"command": "storage:buckets:list", "purpose": "Check existing buckets"},
+        {"command": "storage:buckets:create", "purpose": "Create new bucket"},
+        {"command": "storage:policies:list", "purpose": "Review default policies"},
+        {"command": "storage:policies:set", "purpose": "Configure access policies"},
+        {"command": "storage:buckets:get", "purpose": "Verify configuration"}
+      ],
+      "variations": [
+        "storage:buckets:create → security:audit (verify bucket security)",
+        "storage:buckets:delete (cleanup unused buckets)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Making bucket public when it should be private",
+          "Not setting size limits",
+          "Forgetting to configure CORS for web uploads",
+          "Not reviewing default policies"
+        ],
+        "optimization": "Create bucket with correct settings from start to avoid policy changes",
+        "typical_time": "< 12s for full setup",
+        "best_practices": [
+          "Default to private buckets unless public required",
+          "Set file size limits",
+          "Configure appropriate CORS policies",
+          "Use descriptive bucket names",
+          "Document bucket purpose"
+        ]
+      },
+      "example": {
+        "scenario": "Create private bucket for user profile images with size limits",
+        "commands": [
+          "# Step 1: Check existing buckets",
+          "supabase-cli storage:buckets:list abc123xyz --format json",
+          "# Step 2: Create private bucket",
+          "supabase-cli storage:buckets:create abc123xyz --name user-avatars --public false --format json",
+          "# Step 3: Review default policies",
+          "supabase-cli storage:policies:list abc123xyz --format json",
+          "# Step 4: Set policy for authenticated users only",
+          "supabase-cli storage:policies:set abc123xyz --bucket user-avatars --policy '{\"authenticated\":true,\"max_size\":5242880}' --format json",
+          "# Step 5: Verify configuration",
+          "supabase-cli storage:buckets:get abc123xyz user-avatars --format json"
+        ],
+        "explanation": "Creates private bucket for sensitive user data, sets size limit (5MB), restricts to authenticated users only. Verifies configuration to ensure security."
+      }
+    },
+    {
+      "id": "config-update-verify",
+      "name": "Configuration Update and Verification",
+      "description": "Update configuration settings and verify changes took effect",
+      "when_to_use": [
+        "Changing project settings",
+        "Updating database configuration",
+        "Modifying auth settings",
+        "Tuning performance parameters"
+      ],
+      "commands": [
+        {"command": "config:show-current", "purpose": "Capture current configuration"},
+        {"command": "db:config:set", "purpose": "Update setting"},
+        {"command": "config:show-current", "purpose": "Verify change applied"},
+        {"command": "monitor:health", "purpose": "Check system health after change"}
+      ],
+      "variations": [
+        "auth:service:config → auth:providers:list (verify auth changes)",
+        "db:config:set → db:query (test behavior change)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not capturing before state",
+          "Changing multiple settings at once (hard to debug)",
+          "Not testing impact of changes",
+          "Skipping health check after config change"
+        ],
+        "optimization": "Change one setting at a time and verify impact",
+        "typical_time": "< 12s for change+verify cycle",
+        "best_practices": [
+          "Document original values before changing",
+          "Change one setting at a time",
+          "Verify with health check",
+          "Monitor for 5-10 minutes after change",
+          "Have rollback plan for critical settings"
+        ]
+      },
+      "example": {
+        "scenario": "Increase database max_connections to handle more concurrent users",
+        "commands": [
+          "# Step 1: Capture current configuration",
+          "supabase-cli config:show-current --format json > config_before.json",
+          "# Step 2: Update max_connections",
+          "supabase-cli db:config:set abc123xyz --setting max_connections --value 200 --format json",
+          "# Step 3: Verify change applied",
+          "supabase-cli config:show-current --format json > config_after.json",
+          "diff config_before.json config_after.json",
+          "# Step 4: Check health status",
+          "supabase-cli monitor:health abc123xyz --format json",
+          "# Step 5: Monitor metrics for issues",
+          "supabase-cli monitor:metrics abc123xyz --format json"
+        ],
+        "explanation": "Safely changes critical database setting by documenting before state, making change, verifying, and monitoring health. Can rollback if issues detected."
+      }
+    },
+    {
+      "id": "monitoring-setup",
+      "name": "Monitoring and Logging Setup",
+      "description": "Set up comprehensive monitoring with health checks, metrics, and log analysis",
+      "when_to_use": [
+        "Initial project setup",
+        "Debugging production issues",
+        "Performance optimization",
+        "Establishing observability"
+      ],
+      "commands": [
+        {"command": "monitor:health", "purpose": "Check overall system health"},
+        {"command": "monitor:metrics", "purpose": "Get performance metrics"},
+        {"command": "logs:api:list", "purpose": "Review API request logs"},
+        {"command": "logs:errors:list", "purpose": "Check error patterns"},
+        {"command": "logs:functions:list", "purpose": "Review function execution"}
+      ],
+      "variations": [
+        "logs:errors:get (drill into specific error)",
+        "logs:api:get (analyze specific request)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Only checking logs when things break",
+          "Ignoring warning signs in metrics",
+          "Not establishing baseline metrics",
+          "Reactive instead of proactive monitoring"
+        ],
+        "optimization": "Set up automated health checks in CI/CD pipeline",
+        "typical_time": "< 15s for full monitoring scan",
+        "best_practices": [
+          "Check health regularly (every 5-15 minutes in production)",
+          "Establish baseline metrics for comparison",
+          "Set up alerts for error rate spikes",
+          "Review logs daily, not just when problems occur",
+          "Track metrics over time to identify trends"
+        ]
+      },
+      "example": {
+        "scenario": "Daily health check and performance review",
+        "commands": [
+          "# Step 1: Check overall health",
+          "supabase-cli monitor:health abc123xyz --format json | jq -r '.status'",
+          "# Step 2: Get current metrics",
+          "supabase-cli monitor:metrics abc123xyz --format json > metrics_$(date +%Y%m%d).json",
+          "# Step 3: Check for errors in last 24 hours",
+          "supabase-cli logs:errors:list abc123xyz --format json | jq -r '.[] | select(.timestamp > \"'$(date -d '24 hours ago' -Iseconds)'\")'",
+          "# Step 4: Review API logs for anomalies",
+          "supabase-cli logs:api:list abc123xyz --format json | jq -r '[.[] | select(.status >= 400)] | length'",
+          "# Step 5: Check function execution logs",
+          "supabase-cli logs:functions:list abc123xyz --format json | jq -r '[.[] | select(.status == \"error\")] | length'"
+        ],
+        "explanation": "Daily monitoring routine: health check, capture metrics for trending, check error logs, count API failures, review function errors. Detects issues early."
+      }
+    },
+    {
+      "id": "multi-project-sync",
+      "name": "Multi-Project Configuration Sync",
+      "description": "Apply consistent configuration across multiple projects (dev, staging, production)",
+      "when_to_use": [
+        "Maintaining configuration consistency across environments",
+        "Promoting changes from dev to production",
+        "Setting up new environment to match existing",
+        "Bulk configuration updates"
+      ],
+      "commands": [
+        {"command": "projects:list", "purpose": "Identify all projects"},
+        {"command": "config:show-current", "purpose": "Export reference configuration"},
+        {"command": "db:config:set", "purpose": "Apply to each project"},
+        {"command": "security:restrictions:list", "purpose": "Sync security settings"},
+        {"command": "auth:providers:list", "purpose": "Sync auth configuration"}
+      ],
+      "variations": [
+        "backup:schedule:create (sync backup schedules)",
+        "storage:policies:set (sync storage policies)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Syncing production secrets to dev environments",
+          "Not accounting for environment-specific settings",
+          "Overwriting environment-specific configurations",
+          "Not testing in staging before production"
+        ],
+        "optimization": "Use config profiles to manage environment-specific settings",
+        "typical_time": "< 30s for full sync across 3 environments",
+        "best_practices": [
+          "Create config profiles for each environment",
+          "Never sync production secrets to non-prod",
+          "Document environment-specific settings",
+          "Test in dev → staging → production order",
+          "Use version control for config files"
+        ]
+      },
+      "example": {
+        "scenario": "Sync database configuration from staging to production",
+        "commands": [
+          "# Step 1: List all projects to identify refs",
+          "supabase-cli projects:list --format json | jq -r '.[] | {name, ref}'",
+          "# Step 2: Export staging config as template",
+          "supabase-cli config:show-current --format json > staging_config.json",
+          "# Step 3: Apply to production (excluding environment-specific settings)",
+          "PROD_REF=$(supabase-cli projects:list --format json | jq -r '.[] | select(.name==\"production\") | .ref')",
+          "cat staging_config.json | jq -r '.db | to_entries[] | \"supabase-cli db:config:set '$PROD_REF' --setting \\(.key) --value \\(.value)\"' | bash",
+          "# Step 4: Verify production config matches",
+          "supabase-cli config:show-current --format json > production_config.json",
+          "diff staging_config.json production_config.json"
+        ],
+        "explanation": "Extracts config from staging, applies to production while filtering environment-specific settings, verifies sync. Maintains consistency across environments."
+      }
+    },
+    {
+      "id": "disaster-recovery",
+      "name": "Complete Disaster Recovery Procedure",
+      "description": "Full disaster recovery: verify backups, restore database, restore functions, verify data integrity",
+      "when_to_use": [
+        "Database corruption or data loss",
+        "Catastrophic failure recovery",
+        "Recovering from security incident",
+        "Testing disaster recovery plan"
+      ],
+      "commands": [
+        {"command": "backup:list", "purpose": "Identify available backups"},
+        {"command": "backup:get", "purpose": "Verify backup integrity"},
+        {"command": "backup:restore", "purpose": "Restore database"},
+        {"command": "functions:list", "purpose": "Check function status"},
+        {"command": "db:query", "purpose": "Verify data integrity"},
+        {"command": "monitor:health", "purpose": "Confirm system recovery"}
+      ],
+      "variations": [
+        "backup:pitr:restore (point-in-time recovery for specific timestamp)",
+        "projects:create (rebuild from scratch if backup unavailable)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not having tested recovery plan",
+          "Restoring to wrong point in time",
+          "Not verifying data after restore",
+          "Forgetting to restore functions/policies",
+          "Not communicating with stakeholders during recovery"
+        ],
+        "optimization": "Practice disaster recovery quarterly to ensure procedures work",
+        "typical_time": "< 180s for full recovery (depends on database size)",
+        "best_practices": [
+          "Test recovery procedures quarterly",
+          "Document step-by-step recovery plan",
+          "Identify Recovery Time Objective (RTO) and Recovery Point Objective (RPO)",
+          "Verify data integrity after restore",
+          "Have communication plan for stakeholders",
+          "Keep recovery documentation offline (in case of cloud outage)"
+        ]
+      },
+      "example": {
+        "scenario": "Recover from accidental data deletion in production",
+        "commands": [
+          "# Step 1: List backups and find most recent",
+          "supabase-cli backup:list abc123xyz --format json | jq -r 'sort_by(.created_at) | reverse | .[0]'",
+          "# Step 2: Verify backup integrity",
+          "supabase-cli backup:get abc123xyz backup_abc123 --format json | jq -r '{status, size, created_at}'",
+          "# Step 3: Create current backup before restore (safety)",
+          "supabase-cli backup:create abc123xyz --description 'Pre-recovery backup' --format json",
+          "# Step 4: Restore from backup",
+          "supabase-cli backup:restore abc123xyz backup_abc123 --yes",
+          "# Step 5: Verify data restored",
+          "supabase-cli db:query abc123xyz 'SELECT COUNT(*) FROM users' --format json",
+          "# Step 6: Check functions still deployed",
+          "supabase-cli functions:list abc123xyz --format json",
+          "# Step 7: Run health check",
+          "supabase-cli monitor:health abc123xyz --format json",
+          "# Step 8: Verify with sample queries",
+          "supabase-cli db:query abc123xyz 'SELECT * FROM users ORDER BY created_at DESC LIMIT 5' --format table"
+        ],
+        "explanation": "Complete disaster recovery: find good backup, verify it, create safety backup, restore, verify data, check functions, health check. Safety backup allows rollback if restore fails."
+      }
+    },
+    {
+      "id": "project-pause-resume",
+      "name": "Project Pause and Resume for Cost Optimization",
+      "description": "Pause unused projects to save costs, resume when needed, verify functionality after resume",
+      "when_to_use": [
+        "Pausing dev/staging environments during off-hours",
+        "Cost optimization for infrequently used projects",
+        "Mothballing old projects without deleting",
+        "Scheduled pause/resume for predictable usage patterns"
+      ],
+      "commands": [
+        {"command": "projects:get", "purpose": "Check current status"},
+        {"command": "backup:create", "purpose": "Safety backup before pause"},
+        {"command": "projects:pause", "purpose": "Pause project"},
+        {"command": "projects:get", "purpose": "Verify paused status"},
+        {"command": "monitor:health", "purpose": "Verify health after resume"}
+      ],
+      "variations": [
+        "projects:delete (permanent removal instead of pause)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Pausing production projects",
+          "Not creating backup before pause",
+          "Forgetting projects are paused",
+          "Not testing resume procedure",
+          "Pausing during active operations"
+        ],
+        "optimization": "Schedule automated pause/resume for dev environments (weekends, nights)",
+        "typical_time": "< 70s for pause+backup, < 10s for resume+verify",
+        "best_practices": [
+          "Never pause production projects",
+          "Always backup before pausing",
+          "Document pause/resume schedule",
+          "Tag paused projects clearly",
+          "Test critical functionality after resume",
+          "Set up automated pause/resume for predictable patterns"
+        ]
+      },
+      "example": {
+        "scenario": "Pause development environment for weekend to save costs",
+        "commands": [
+          "# Friday evening: Prepare for pause",
+          "# Step 1: Check project status",
+          "supabase-cli projects:get dev-project --format json | jq -r '.status'",
+          "# Step 2: Create backup before pausing",
+          "supabase-cli backup:create dev-project --description 'Pre-weekend-pause backup' --format json",
+          "# Step 3: Pause project",
+          "supabase-cli projects:pause dev-project --yes",
+          "# Step 4: Verify paused",
+          "supabase-cli projects:get dev-project --format json | jq -r '.status'",
+          "",
+          "# Monday morning: Resume project (note: resume command not in catalog, shown for completeness)",
+          "# Step 5: Check health after resume",
+          "supabase-cli monitor:health dev-project --format json",
+          "# Step 6: Test critical functionality",
+          "supabase-cli db:query dev-project 'SELECT 1' --format json"
+        ],
+        "explanation": "Cost optimization: backup before pause (safety), pause dev environment for weekend, resume Monday, verify health. Can save significant costs on non-production environments."
+      }
+    },
+    {
+      "id": "auth-provider-setup",
+      "name": "Authentication Provider Setup",
+      "description": "Configure OAuth providers, test authentication flow, and verify security settings",
+      "when_to_use": [
+        "Setting up social login (Google, GitHub, Facebook)",
+        "Adding SSO for enterprise customers",
+        "Configuring multi-factor authentication",
+        "Updating auth provider credentials"
+      ],
+      "commands": [
+        {"command": "auth:providers:list", "purpose": "Check current providers"},
+        {"command": "auth:providers:config", "purpose": "Configure OAuth provider"},
+        {"command": "auth:service:config", "purpose": "Update auth service settings"},
+        {"command": "security:audit", "purpose": "Verify auth security"},
+        {"command": "logs:api:list", "purpose": "Monitor auth attempts"}
+      ],
+      "variations": [
+        "auth:sso:enable → auth:sso:list (for SSO setup)",
+        "auth:jwt:rotate (for security maintenance)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not testing auth flow after configuration",
+          "Storing client secrets insecurely",
+          "Forgetting to configure redirect URLs",
+          "Not setting up proper scopes",
+          "Skipping security audit after changes"
+        ],
+        "optimization": "Configure all providers at once to minimize testing cycles",
+        "typical_time": "< 20s per provider setup",
+        "best_practices": [
+          "Use environment-specific OAuth apps (dev, staging, prod)",
+          "Never commit client secrets to version control",
+          "Configure minimal required scopes",
+          "Test auth flow after every change",
+          "Run security audit after auth changes",
+          "Document provider configuration steps"
+        ]
+      },
+      "example": {
+        "scenario": "Add Google OAuth for user authentication",
+        "commands": [
+          "# Step 1: Check current providers",
+          "supabase-cli auth:providers:list abc123xyz --format json",
+          "# Step 2: Configure Google OAuth (client ID/secret from env vars for security)",
+          "supabase-cli auth:providers:config google abc123xyz --format json",
+          "# Step 3: Update auth service to enable provider",
+          "supabase-cli auth:service:config abc123xyz --format json",
+          "# Step 4: Verify configuration",
+          "supabase-cli auth:providers:list abc123xyz --format json | jq -r '.[] | select(.name==\"google\")'",
+          "# Step 5: Run security audit",
+          "supabase-cli security:audit abc123xyz --format json | jq -r '.[] | select(.category==\"auth\")'",
+          "# Step 6: Monitor auth attempts",
+          "supabase-cli logs:api:list abc123xyz --format json | jq -r '.[] | select(.path | contains(\"/auth\"))'"
+        ],
+        "explanation": "Complete OAuth setup: check existing providers, configure Google, enable in service, verify, audit security, monitor auth logs. Ensures secure authentication."
+      }
+    },
+    {
+      "id": "branch-workflow",
+      "name": "Database Branch Development Workflow",
+      "description": "Create development branch, test changes, merge to production",
+      "when_to_use": [
+        "Developing database schema changes",
+        "Testing migrations before production",
+        "Collaborative database development",
+        "Isolating experimental changes"
+      ],
+      "commands": [
+        {"command": "branches:list", "purpose": "Check existing branches"},
+        {"command": "branches:create", "purpose": "Create development branch"},
+        {"command": "migrations:apply", "purpose": "Test migration on branch"},
+        {"command": "db:query", "purpose": "Verify changes"},
+        {"command": "backup:create", "purpose": "Backup production before merge"}
+      ],
+      "variations": [
+        "projects:create (create separate project instead of branch)",
+        "db:replicas:create (read replica for testing)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not testing migrations on branch first",
+          "Merging without verification",
+          "Forgetting to backup production before merge",
+          "Leaving stale branches",
+          "Not cleaning up test data before merge"
+        ],
+        "optimization": "Create branch early in development cycle to test iteratively",
+        "typical_time": "< 90s for branch creation, < 5s per operation after",
+        "best_practices": [
+          "Create branch for each major schema change",
+          "Test all migrations on branch first",
+          "Clean up test data before merging",
+          "Backup production before merge",
+          "Delete branch after successful merge",
+          "Document branch purpose and changes"
+        ]
+      },
+      "example": {
+        "scenario": "Develop and test new feature requiring schema changes",
+        "commands": [
+          "# Step 1: Check existing branches",
+          "supabase-cli branches:list abc123xyz --format json",
+          "# Step 2: Create feature branch",
+          "supabase-cli branches:create feature-user-preferences --format json",
+          "# Step 3: Wait for branch ready (30-60s)",
+          "while [[ $(supabase-cli branches:list abc123xyz --format json | jq -r '.[] | select(.name==\"feature-user-preferences\") | .status') != \"ready\" ]]; do sleep 10; done",
+          "# Step 4: Get branch project ref for testing",
+          "BRANCH_REF=$(supabase-cli branches:list abc123xyz --format json | jq -r '.[] | select(.name==\"feature-user-preferences\") | .ref')",
+          "# Step 5: Apply migration to branch",
+          "supabase-cli migrations:apply $BRANCH_REF --file ./migrations/004_user_preferences.sql",
+          "# Step 6: Test on branch",
+          "supabase-cli db:query $BRANCH_REF 'SELECT * FROM user_preferences LIMIT 1' --format json",
+          "# Step 7: Backup production before merge",
+          "supabase-cli backup:create abc123xyz --description 'Pre-merge: user preferences feature' --format json"
+        ],
+        "explanation": "Isolated development: create branch, apply migrations, test thoroughly, backup production, merge. Prevents breaking production with untested changes."
+      }
+    },
+    {
+      "id": "jwt-rotation",
+      "name": "JWT Secret Rotation",
+      "description": "Rotate JWT secrets for security compliance and incident response",
+      "when_to_use": [
+        "Regular security maintenance (quarterly/annually)",
+        "After security incident or suspected compromise",
+        "Compliance requirement for secret rotation",
+        "Before major authentication changes"
+      ],
+      "commands": [
+        {"command": "auth:jwt:get", "purpose": "Document current JWT for reference"},
+        {"command": "backup:create", "purpose": "Safety backup before rotation"},
+        {"command": "auth:jwt:rotate", "purpose": "Generate new JWT secret"},
+        {"command": "auth:jwt:get", "purpose": "Verify new JWT generated"},
+        {"command": "logs:api:list", "purpose": "Monitor for auth failures"}
+      ],
+      "variations": [
+        "config:set-token (update CLI token after rotation)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not planning for token invalidation",
+          "Rotating during peak traffic",
+          "Not updating all services with new secret",
+          "Forgetting to update environment variables",
+          "No rollback plan"
+        ],
+        "optimization": "Schedule rotation during maintenance window to minimize impact",
+        "typical_time": "< 10s for rotation, but plan for service updates",
+        "best_practices": [
+          "Schedule rotations during low-traffic periods",
+          "Document all services that use JWT",
+          "Update all services immediately after rotation",
+          "Monitor logs for authentication failures",
+          "Have rollback plan ready",
+          "Rotate regularly (quarterly recommended)",
+          "Notify team before rotation"
+        ]
+      },
+      "example": {
+        "scenario": "Quarterly JWT secret rotation for security compliance",
+        "commands": [
+          "# Pre-rotation preparation",
+          "# Step 1: Get current JWT (store securely, don't log!)",
+          "supabase-cli auth:jwt:get --format json > /secure/jwt_backup_$(date +%Y%m%d).json",
+          "# Step 2: Create backup before rotation",
+          "supabase-cli backup:create abc123xyz --description 'Pre-JWT-rotation backup' --format json",
+          "# Step 3: Rotate JWT (this invalidates all existing tokens!)",
+          "supabase-cli auth:jwt:rotate abc123xyz --yes --format json",
+          "# Step 4: Get new JWT",
+          "NEW_JWT=$(supabase-cli auth:jwt:get --format json | jq -r '.jwt_secret')",
+          "# Step 5: Update environment variables in all services",
+          "# export SUPABASE_JWT_SECRET=$NEW_JWT (in all apps)",
+          "# Step 6: Monitor for auth failures",
+          "supabase-cli logs:api:list abc123xyz --format json | jq -r '.[] | select(.status == 401) | {timestamp, path, error}'",
+          "# Step 7: Verify health",
+          "supabase-cli monitor:health abc123xyz --format json"
+        ],
+        "explanation": "Secure rotation: backup current secret, create safety backup, rotate, update all services, monitor for issues. Critical for security but requires coordination."
+      }
+    },
+    {
+      "id": "integration-webhook-setup",
+      "name": "Integration Webhook Setup",
+      "description": "Configure webhooks for external service integration and event notifications",
+      "when_to_use": [
+        "Setting up event-driven integrations",
+        "Sending notifications to external services",
+        "Triggering workflows on database events",
+        "Implementing audit logging to external systems"
+      ],
+      "commands": [
+        {"command": "integrations:list", "purpose": "Check existing integrations"},
+        {"command": "integrations:webhooks:list", "purpose": "View current webhooks"},
+        {"command": "integrations:webhooks:create", "purpose": "Create new webhook"},
+        {"command": "integrations:webhooks:list", "purpose": "Verify webhook created"},
+        {"command": "logs:api:list", "purpose": "Monitor webhook deliveries"}
+      ],
+      "variations": [
+        "integrations:setup (for platform integrations like Vercel/Netlify)",
+        "integrations:webhooks:delete (cleanup unused webhooks)"
+      ],
+      "ai_guidance": {
+        "common_mistakes": [
+          "Not validating webhook URL accessibility",
+          "Subscribing to too many events",
+          "No retry logic for failed deliveries",
+          "Not securing webhook endpoints",
+          "Forgetting to test webhook delivery"
+        ],
+        "optimization": "Subscribe only to necessary events to reduce webhook volume",
+        "typical_time": "< 8s for webhook creation",
+        "best_practices": [
+          "Validate webhook URL before creating",
+          "Subscribe to minimal required events",
+          "Implement webhook signature verification",
+          "Set up retry logic for failures",
+          "Monitor webhook delivery success rate",
+          "Document webhook event schemas",
+          "Test webhook delivery after creation"
+        ]
+      },
+      "example": {
+        "scenario": "Set up webhook to notify Slack when new users sign up",
+        "commands": [
+          "# Step 1: Check existing integrations",
+          "supabase-cli integrations:list abc123xyz --format json",
+          "# Step 2: List current webhooks",
+          "supabase-cli integrations:webhooks:list abc123xyz --format json",
+          "# Step 3: Create webhook for user signup events",
+          "supabase-cli integrations:webhooks:create abc123xyz --url https://hooks.slack.com/services/XXX/YYY/ZZZ --events auth.user.created --format json",
+          "# Step 4: Verify webhook created",
+          "supabase-cli integrations:webhooks:list abc123xyz --format json | jq -r '.[] | select(.url | contains(\"slack.com\"))'",
+          "# Step 5: Test by creating test user (manual step in app)",
+          "# Step 6: Monitor webhook deliveries",
+          "supabase-cli logs:api:list abc123xyz --format json | jq -r '.[] | select(.path | contains(\"/webhooks\"))'"
+        ],
+        "explanation": "Integration setup: check existing webhooks, create new webhook for specific event, verify creation, test delivery, monitor success rate. Enables event-driven architecture."
+      }
+    }
+  ],
+  "metadata": {
+    "usage_notes": [
+      "Patterns are ordered roughly by frequency of use",
+      "All timing estimates assume network latency < 1s",
+      "Destructive operations always require backup first",
+      "Cache TTL values referenced from command-catalog.json",
+      "Use --yes flag to skip confirmations in CI/CD"
+    ],
+    "pattern_categories": {
+      "discovery": ["list-then-get"],
+      "safety": ["backup-before-destructive", "create-verify", "disaster-recovery"],
+      "security": ["security-audit-remediate", "jwt-rotation"],
+      "operations": ["backup-lifecycle-full", "migration-safe-apply", "monitoring-setup"],
+      "scaling": ["replica-scale-read", "storage-bucket-setup"],
+      "configuration": ["config-update-verify", "multi-project-sync"],
+      "development": ["function-deploy-test", "database-query-inspect", "branch-workflow"],
+      "optimization": ["project-pause-resume"],
+      "integration": ["auth-provider-setup", "integration-webhook-setup"]
+    },
+    "next_steps": "Use patterns as building blocks for workflows.json. Each pattern can be combined with others to form complete task workflows."
+  }
+}

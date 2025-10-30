@@ -1,0 +1,2045 @@
+{
+  "version": "0.1.0",
+  "updated_at": "2025-10-29T00:00:00Z",
+  "error_count": 38,
+  "errors": [
+    {
+      "code": "ALREADY_EXISTS",
+      "name": "Resource Already Exists",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 409,
+      "description": "The resource you're trying to create already exists in the system",
+      "common_causes": [
+        "Attempting to create a project with a duplicate name",
+        "Creating a profile that already exists",
+        "Duplicate database objects or backup schedules",
+        "Race condition during concurrent create operations"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Use the existing resource instead of creating a new one",
+          "commands": [
+            "supabase-cli projects:list",
+            "supabase-cli config:list-profiles"
+          ],
+          "explanation": "Check existing resources and use the one that already exists"
+        },
+        {
+          "priority": 2,
+          "solution": "Delete the existing resource and recreate (if safe)",
+          "commands": [
+            "supabase-cli projects:delete <project-ref>",
+            "supabase-cli config:delete-profile <name>"
+          ],
+          "explanation": "Only delete if you're certain the existing resource is not in use"
+        },
+        {
+          "priority": 3,
+          "solution": "Use a different name or identifier",
+          "commands": [],
+          "explanation": "Choose a unique name that doesn't conflict with existing resources"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Check for existing resources before creating new ones",
+          "Use unique, descriptive names for resources",
+          "Implement idempotent create operations where possible"
+        ],
+        "validation": "Run list commands to verify the resource doesn't exist",
+        "automation": "Add pre-flight checks in scripts to verify resource availability"
+      },
+      "related_errors": ["NOT_FOUND", "VALIDATION_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list existing resources and suggest using them",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "API_ERROR",
+      "name": "Supabase API Error",
+      "category": "network",
+      "severity": 2,
+      "http_status": 503,
+      "description": "The Supabase API returned an error or is unavailable",
+      "common_causes": [
+        "Supabase API service is down",
+        "API endpoint deprecation or changes",
+        "Malformed API request",
+        "Service maintenance window"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Wait and retry the operation",
+          "commands": [],
+          "explanation": "API may be experiencing temporary issues and will recover automatically"
+        },
+        {
+          "priority": 2,
+          "solution": "Check Supabase status page",
+          "commands": [],
+          "explanation": "Visit https://status.supabase.com to verify service health"
+        },
+        {
+          "priority": 3,
+          "solution": "Contact Supabase support",
+          "commands": [],
+          "explanation": "If the error persists, report it to Supabase support team"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Implement retry logic with exponential backoff",
+          "Monitor Supabase status before critical operations",
+          "Have fallback procedures for API unavailability"
+        ],
+        "validation": "Check API health endpoint before operations",
+        "automation": "Use circuit breaker pattern to prevent cascading failures"
+      },
+      "related_errors": ["NETWORK_ERROR", "TIMEOUT", "INTERNAL_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI should wait and retry automatically",
+        "user_action_required": false,
+        "escalation_needed": true
+      }
+    },
+    {
+      "code": "BUCKET_NOT_FOUND",
+      "name": "Storage Bucket Not Found",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 404,
+      "description": "The requested storage bucket does not exist in the project",
+      "common_causes": [
+        "Bucket name is misspelled or incorrect",
+        "Bucket was deleted",
+        "Using bucket from different project",
+        "Project reference is incorrect"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Verify the bucket name and project reference",
+          "commands": [
+            "supabase-cli storage:buckets:list <project-ref>"
+          ],
+          "explanation": "List all buckets to find the correct name"
+        },
+        {
+          "priority": 2,
+          "solution": "Create the bucket if it should exist",
+          "commands": [
+            "supabase-cli storage:buckets:create <bucket-name> <project-ref>"
+          ],
+          "explanation": "Create the bucket with proper configuration"
+        },
+        {
+          "priority": 3,
+          "solution": "Check project context and switch if needed",
+          "commands": [
+            "supabase-cli projects:list",
+            "supabase-cli config:set-profile <profile-name>"
+          ],
+          "explanation": "Ensure you're working with the correct project"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use project-specific bucket naming conventions",
+          "Document bucket names and purposes",
+          "Verify bucket existence before operations"
+        ],
+        "validation": "List buckets before attempting operations",
+        "automation": "Create buckets as part of project initialization scripts"
+      },
+      "related_errors": ["NOT_FOUND", "PROJECT_NOT_FOUND", "STORAGE_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list buckets and suggest correct names",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CANNOT_DELETE_CURRENT_PROFILE",
+      "name": "Cannot Delete Active Profile",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "You cannot delete the currently active configuration profile",
+      "common_causes": [
+        "Attempting to delete the profile you're currently using",
+        "Profile is set as active in configuration"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Switch to a different profile first",
+          "commands": [
+            "supabase-cli config:list-profiles",
+            "supabase-cli config:set-profile <other-profile>"
+          ],
+          "explanation": "Activate a different profile before deleting the current one"
+        },
+        {
+          "priority": 2,
+          "solution": "Create a new profile and switch to it",
+          "commands": [
+            "supabase-cli config:create-profile <new-name> <project-ref>",
+            "supabase-cli config:set-profile <new-name>"
+          ],
+          "explanation": "Create and switch to a new profile before deletion"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Always maintain at least two profiles",
+          "Switch profiles before attempting deletion",
+          "Document which profile is for which environment"
+        ],
+        "validation": "Check current profile before deletion",
+        "automation": "Add pre-deletion checks in scripts to verify active profile"
+      },
+      "related_errors": ["CANNOT_DELETE_DEFAULT_PROFILE", "PROFILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can switch to default profile automatically before deletion",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CANNOT_DELETE_DEFAULT_PROFILE",
+      "name": "Cannot Delete Default Profile",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "The default configuration profile cannot be deleted",
+      "common_causes": [
+        "Attempting to delete the 'default' profile",
+        "System protection of the default profile"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Keep the default profile and create others as needed",
+          "commands": [
+            "supabase-cli config:create-profile <new-name> <project-ref>"
+          ],
+          "explanation": "The default profile is protected; create additional profiles instead"
+        },
+        {
+          "priority": 2,
+          "solution": "Modify the default profile instead of deleting it",
+          "commands": [
+            "supabase-cli config:set-profile default",
+            "supabase-cli config:set-token <new-token>"
+          ],
+          "explanation": "Update the default profile's configuration to meet your needs"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Understand that default profile is system-protected",
+          "Use default for primary/production environment",
+          "Create named profiles for other environments"
+        ],
+        "validation": "Check profile name before deletion attempts",
+        "automation": "Add profile name validation in deletion scripts"
+      },
+      "related_errors": ["CANNOT_DELETE_CURRENT_PROFILE", "PROFILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI should explain the protection and suggest alternatives",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CIRCUIT_BREAKER_OPEN",
+      "name": "Circuit Breaker Active",
+      "category": "network",
+      "severity": 2,
+      "http_status": 503,
+      "description": "Circuit breaker is open due to repeated failures, blocking requests to prevent cascading failures",
+      "common_causes": [
+        "Multiple consecutive API failures",
+        "Network instability",
+        "API service degradation",
+        "Timeout threshold exceeded"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Wait for the circuit breaker to reset",
+          "commands": [],
+          "explanation": "Circuit breaker will automatically reset after the timeout period (typically 30-60 seconds)"
+        },
+        {
+          "priority": 2,
+          "solution": "Check network connectivity and API status",
+          "commands": [],
+          "explanation": "Verify your internet connection and Supabase service status before retrying"
+        },
+        {
+          "priority": 3,
+          "solution": "Restart the CLI to reset circuit breaker state",
+          "commands": [],
+          "explanation": "Restarting will reset the circuit breaker, but underlying issues may persist"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Ensure stable network connectivity",
+          "Monitor API response times and failure rates",
+          "Implement proper retry logic with backoff",
+          "Use health checks before critical operations"
+        ],
+        "validation": "Verify network and API availability before batch operations",
+        "automation": "Implement pre-flight health checks in automation scripts"
+      },
+      "related_errors": ["NETWORK_ERROR", "TIMEOUT", "API_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should wait for circuit breaker reset and retry automatically",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CONFIG_ERROR",
+      "name": "Configuration Error",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 500,
+      "description": "General configuration error occurred",
+      "common_causes": [
+        "Invalid configuration format",
+        "Corrupted configuration file",
+        "Missing required configuration fields",
+        "Configuration version mismatch"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Validate and fix configuration file",
+          "commands": [
+            "supabase-cli config:show-current"
+          ],
+          "explanation": "Review current configuration and identify invalid entries"
+        },
+        {
+          "priority": 2,
+          "solution": "Reset configuration to defaults",
+          "commands": [
+            "supabase-cli config:create-profile default <project-ref>",
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Recreate configuration with valid values"
+        },
+        {
+          "priority": 3,
+          "solution": "Delete and reinitialize configuration",
+          "commands": [],
+          "explanation": "Remove ~/.supabase-cli directory and reconfigure from scratch"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate configuration before saving",
+          "Use configuration schema validation",
+          "Backup configuration before modifications",
+          "Use version control for configuration files"
+        ],
+        "validation": "Run config validation after any changes",
+        "automation": "Implement configuration schema validation in CI/CD"
+      },
+      "related_errors": ["CONFIG_LOAD_FAILED", "CONFIG_SAVE_FAILED", "INVALID_CONFIG"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can attempt to fix invalid configuration automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CONFIG_LOAD_FAILED",
+      "name": "Configuration Load Failed",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 500,
+      "description": "Failed to load configuration file from disk",
+      "common_causes": [
+        "Configuration file doesn't exist",
+        "File permissions prevent reading",
+        "Corrupted configuration file",
+        "Disk I/O errors"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check file permissions",
+          "commands": [],
+          "explanation": "Ensure the CLI has read permissions for ~/.supabase-cli directory"
+        },
+        {
+          "priority": 2,
+          "solution": "Initialize new configuration",
+          "commands": [
+            "supabase-cli config:create-profile default <project-ref>",
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Create a fresh configuration if file is missing or corrupted"
+        },
+        {
+          "priority": 3,
+          "solution": "Restore from backup",
+          "commands": [],
+          "explanation": "If you have a backup of ~/.supabase-cli, restore it"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Maintain proper file permissions",
+          "Regular configuration backups",
+          "Use configuration version control",
+          "Monitor disk health"
+        ],
+        "validation": "Verify configuration file exists and is readable",
+        "automation": "Add configuration backup to deployment scripts"
+      },
+      "related_errors": ["CONFIG_ERROR", "CONFIG_NOT_LOADED", "FILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can initialize new configuration automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CONFIG_NOT_LOADED",
+      "name": "Configuration Not Loaded",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 500,
+      "description": "Configuration has not been loaded into memory",
+      "common_causes": [
+        "Configuration initialization was skipped",
+        "Configuration load was interrupted",
+        "Race condition during startup",
+        "Configuration was explicitly unloaded"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Restart the CLI operation",
+          "commands": [],
+          "explanation": "Re-run the command to trigger configuration loading"
+        },
+        {
+          "priority": 2,
+          "solution": "Initialize configuration explicitly",
+          "commands": [
+            "supabase-cli config:create-profile default <project-ref>"
+          ],
+          "explanation": "Manually trigger configuration initialization"
+        },
+        {
+          "priority": 3,
+          "solution": "Check for configuration file",
+          "commands": [
+            "supabase-cli config:show-current"
+          ],
+          "explanation": "Verify configuration exists and can be loaded"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Ensure configuration is initialized before operations",
+          "Add configuration validation to startup",
+          "Handle configuration loading errors gracefully"
+        ],
+        "validation": "Verify configuration is loaded before executing commands",
+        "automation": "Add configuration load verification to scripts"
+      },
+      "related_errors": ["CONFIG_LOAD_FAILED", "CONFIG_ERROR", "MISSING_CONFIG"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI can retry operation to trigger configuration load",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CONFIG_SAVE_FAILED",
+      "name": "Configuration Save Failed",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 500,
+      "description": "Failed to save configuration changes to disk",
+      "common_causes": [
+        "File permissions prevent writing",
+        "Disk is full",
+        "Directory doesn't exist",
+        "Disk I/O errors"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check disk space and permissions",
+          "commands": [],
+          "explanation": "Ensure sufficient disk space and write permissions for ~/.supabase-cli"
+        },
+        {
+          "priority": 2,
+          "solution": "Create configuration directory manually",
+          "commands": [],
+          "explanation": "Create ~/.supabase-cli directory with proper permissions"
+        },
+        {
+          "priority": 3,
+          "solution": "Use alternative configuration location",
+          "commands": [],
+          "explanation": "Set SUPABASE_CLI_CONFIG_DIR environment variable to writable location"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Ensure adequate disk space",
+          "Maintain proper directory permissions",
+          "Monitor disk health",
+          "Use atomic writes for configuration updates"
+        ],
+        "validation": "Check write permissions before saving configuration",
+        "automation": "Add disk space checks to deployment scripts"
+      },
+      "related_errors": ["CONFIG_ERROR", "FILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot fix disk/permission issues automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "CONNECTION_ERROR",
+      "name": "Connection Error",
+      "category": "network",
+      "severity": 2,
+      "http_status": 503,
+      "description": "Failed to establish connection to Supabase API",
+      "common_causes": [
+        "No internet connectivity",
+        "Firewall blocking requests",
+        "DNS resolution failure",
+        "Proxy configuration issues"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check internet connectivity",
+          "commands": [],
+          "explanation": "Verify your internet connection is working"
+        },
+        {
+          "priority": 2,
+          "solution": "Check firewall and proxy settings",
+          "commands": [],
+          "explanation": "Ensure firewall allows HTTPS connections to Supabase API endpoints"
+        },
+        {
+          "priority": 3,
+          "solution": "Verify DNS resolution",
+          "commands": [],
+          "explanation": "Check that api.supabase.com resolves correctly"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Ensure stable network connectivity",
+          "Configure proxy settings if needed",
+          "Use VPN if required for network access",
+          "Monitor network health"
+        ],
+        "validation": "Test network connectivity before operations",
+        "automation": "Add network health checks to scripts"
+      },
+      "related_errors": ["NETWORK_ERROR", "TIMEOUT", "API_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should wait and retry with exponential backoff",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "DATABASE_ERROR",
+      "name": "Database Error",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 500,
+      "description": "An error occurred while interacting with the database",
+      "common_causes": [
+        "Invalid SQL query",
+        "Database connection failure",
+        "Permission denied on database operation",
+        "Database constraint violation"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Review and fix the database query",
+          "commands": [
+            "supabase-cli db:query <project-ref> --query <corrected-query>"
+          ],
+          "explanation": "Check SQL syntax and database schema"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify database permissions",
+          "commands": [
+            "supabase-cli security:policies:list <project-ref>"
+          ],
+          "explanation": "Ensure you have proper permissions for the operation"
+        },
+        {
+          "priority": 3,
+          "solution": "Check database health",
+          "commands": [
+            "supabase-cli projects:get <project-ref>"
+          ],
+          "explanation": "Verify database is running and healthy"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate SQL queries before execution",
+          "Use parameterized queries to prevent injection",
+          "Test queries in development first",
+          "Monitor database health and performance"
+        ],
+        "validation": "Use query validation tools before execution",
+        "automation": "Add SQL linting to CI/CD pipeline"
+      },
+      "related_errors": ["QUERY_ERROR", "VALIDATION_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can attempt to fix SQL syntax errors",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "FILE_NOT_FOUND",
+      "name": "File Not Found",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 404,
+      "description": "The specified file or path does not exist",
+      "common_causes": [
+        "Incorrect file path",
+        "File was deleted",
+        "Typo in filename",
+        "Working directory is incorrect"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Verify the file path",
+          "commands": [],
+          "explanation": "Check that the file exists at the specified location"
+        },
+        {
+          "priority": 2,
+          "solution": "Use absolute paths instead of relative",
+          "commands": [],
+          "explanation": "Absolute paths are less prone to working directory issues"
+        },
+        {
+          "priority": 3,
+          "solution": "Create the missing file",
+          "commands": [],
+          "explanation": "If the file should exist, create it with proper content"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use absolute paths when possible",
+          "Validate file existence before operations",
+          "Maintain consistent project structure",
+          "Document file locations"
+        ],
+        "validation": "Check file existence before operations",
+        "automation": "Add file existence validation to scripts"
+      },
+      "related_errors": ["NOT_FOUND", "CONFIG_LOAD_FAILED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can search for similar files and suggest correct paths",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "INTERNAL_ERROR",
+      "name": "Internal Server Error",
+      "category": "internal",
+      "severity": 1,
+      "http_status": 500,
+      "description": "An unexpected internal error occurred on the server",
+      "common_causes": [
+        "Server-side bug",
+        "Unexpected data format",
+        "Resource exhaustion on server",
+        "Unhandled exception on server"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Retry the operation",
+          "commands": [],
+          "explanation": "Internal errors may be transient and resolve on retry"
+        },
+        {
+          "priority": 2,
+          "solution": "Check Supabase status",
+          "commands": [],
+          "explanation": "Visit https://status.supabase.com for service health"
+        },
+        {
+          "priority": 3,
+          "solution": "Report to Supabase support",
+          "commands": [],
+          "explanation": "Persistent internal errors should be reported with details"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Implement retry logic for internal errors",
+          "Monitor Supabase service status",
+          "Log error details for debugging",
+          "Have fallback procedures"
+        ],
+        "validation": "Validate input data to reduce server-side errors",
+        "automation": "Use circuit breaker to prevent repeated failed requests"
+      },
+      "related_errors": ["API_ERROR", "UNKNOWN_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should retry automatically with backoff",
+        "user_action_required": false,
+        "escalation_needed": true
+      }
+    },
+    {
+      "code": "INVALID_CONFIG",
+      "name": "Invalid Configuration",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "The configuration contains invalid values or format",
+      "common_causes": [
+        "Malformed JSON in configuration",
+        "Invalid field values",
+        "Missing required fields",
+        "Configuration schema mismatch"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Validate configuration format",
+          "commands": [
+            "supabase-cli config:show-current"
+          ],
+          "explanation": "Review configuration and fix invalid values"
+        },
+        {
+          "priority": 2,
+          "solution": "Reset to valid configuration",
+          "commands": [
+            "supabase-cli config:create-profile default <project-ref>",
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Recreate configuration with valid values"
+        },
+        {
+          "priority": 3,
+          "solution": "Refer to configuration documentation",
+          "commands": [],
+          "explanation": "Check documentation for valid configuration schema"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use configuration validation before saving",
+          "Follow configuration schema strictly",
+          "Use environment-specific configurations",
+          "Document configuration requirements"
+        ],
+        "validation": "Validate configuration against schema",
+        "automation": "Add configuration validation to CI/CD"
+      },
+      "related_errors": ["CONFIG_ERROR", "VALIDATION_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can fix common configuration issues automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "INVALID_INPUT",
+      "name": "Invalid Input",
+      "category": "validation",
+      "severity": 2,
+      "http_status": 400,
+      "description": "The provided input does not meet validation requirements",
+      "common_causes": [
+        "Missing required parameters",
+        "Invalid parameter format",
+        "Out of range values",
+        "Type mismatch"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Review command documentation",
+          "commands": [
+            "supabase-cli <command> --help"
+          ],
+          "explanation": "Check required parameters and valid formats"
+        },
+        {
+          "priority": 2,
+          "solution": "Correct the input values",
+          "commands": [],
+          "explanation": "Provide valid input that meets the requirements"
+        },
+        {
+          "priority": 3,
+          "solution": "Use examples from documentation",
+          "commands": [],
+          "explanation": "Follow working examples from command help"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate input before sending to CLI",
+          "Use type-safe input methods",
+          "Provide clear input requirements",
+          "Use input validation libraries"
+        ],
+        "validation": "Implement client-side validation",
+        "automation": "Add input validation to scripts"
+      },
+      "related_errors": ["VALIDATION_ERROR", "INVALID_PROJECT_REF"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can correct common input format issues",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "INVALID_PROJECT_REF",
+      "name": "Invalid Project Reference",
+      "category": "validation",
+      "severity": 2,
+      "http_status": 400,
+      "description": "The project reference format is invalid",
+      "common_causes": [
+        "Typo in project reference",
+        "Using project name instead of reference",
+        "Incorrect format (should be lowercase alphanumeric)",
+        "Copy-paste error"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Get correct project reference",
+          "commands": [
+            "supabase-cli projects:list"
+          ],
+          "explanation": "List projects to find the correct project reference"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify format (lowercase, alphanumeric, hyphens)",
+          "commands": [],
+          "explanation": "Project refs are typically 20 characters, lowercase alphanumeric"
+        },
+        {
+          "priority": 3,
+          "solution": "Copy from Supabase dashboard",
+          "commands": [],
+          "explanation": "Get the exact project ref from your project settings"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Store project refs in configuration profiles",
+          "Use copy-paste from dashboard to avoid typos",
+          "Validate project ref format before operations",
+          "Use project ref constants in scripts"
+        ],
+        "validation": "Validate format: /^[a-z0-9-]+$/",
+        "automation": "Use configuration profiles instead of manual entry"
+      },
+      "related_errors": ["PROJECT_NOT_FOUND", "INVALID_INPUT", "NO_PROJECT_REF"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list projects and suggest correct reference",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "INVALID_TOKEN",
+      "name": "Invalid Access Token",
+      "category": "authentication",
+      "severity": 1,
+      "http_status": 401,
+      "description": "The provided access token is invalid or malformed",
+      "common_causes": [
+        "Token was revoked",
+        "Token format is incorrect",
+        "Using wrong token type",
+        "Token belongs to different account"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Generate new access token",
+          "commands": [
+            "supabase-cli config:set-token <new-token>"
+          ],
+          "explanation": "Create a new token in Supabase dashboard and update configuration"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify token format",
+          "commands": [],
+          "explanation": "Ensure you're using the correct token type (personal access token)"
+        },
+        {
+          "priority": 3,
+          "solution": "Check token in dashboard",
+          "commands": [],
+          "explanation": "Verify the token exists and is active in Supabase dashboard"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use environment variables for tokens",
+          "Rotate tokens regularly",
+          "Never commit tokens to version control",
+          "Use token management system"
+        ],
+        "validation": "Validate token format before saving",
+        "automation": "Implement token rotation in CI/CD"
+      },
+      "related_errors": ["INVALID_TOKEN_FORMAT", "TOKEN_EXPIRED", "UNAUTHORIZED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot recover without valid token from user",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "INVALID_TOKEN_FORMAT",
+      "name": "Invalid Token Format",
+      "category": "authentication",
+      "severity": 1,
+      "http_status": 401,
+      "description": "The access token format does not match expected pattern",
+      "common_causes": [
+        "Token is truncated or incomplete",
+        "Extra whitespace in token",
+        "Using wrong credential type",
+        "Token encoding issue"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Copy token carefully from dashboard",
+          "commands": [
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Ensure entire token is copied without extra characters"
+        },
+        {
+          "priority": 2,
+          "solution": "Remove whitespace and newlines",
+          "commands": [],
+          "explanation": "Trim any whitespace from the token before using"
+        },
+        {
+          "priority": 3,
+          "solution": "Generate fresh token",
+          "commands": [],
+          "explanation": "Create a new token in Supabase dashboard"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use copy-paste for tokens to avoid typos",
+          "Trim whitespace before saving tokens",
+          "Validate token format on input",
+          "Use secure token storage"
+        ],
+        "validation": "Check token format matches expected pattern",
+        "automation": "Add token format validation to configuration"
+      },
+      "related_errors": ["INVALID_TOKEN", "UNAUTHORIZED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can attempt to trim whitespace but needs valid token",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "MISSING_CONFIG",
+      "name": "Missing Configuration",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "Required configuration is missing",
+      "common_causes": [
+        "Configuration not initialized",
+        "Configuration file deleted",
+        "Fresh CLI installation",
+        "Profile doesn't exist"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Initialize configuration",
+          "commands": [
+            "supabase-cli config:create-profile default <project-ref>",
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Create initial configuration with project and token"
+        },
+        {
+          "priority": 2,
+          "solution": "Check if configuration exists",
+          "commands": [
+            "supabase-cli config:list-profiles"
+          ],
+          "explanation": "Verify if any profiles exist"
+        },
+        {
+          "priority": 3,
+          "solution": "Restore from backup",
+          "commands": [],
+          "explanation": "If you have a backup of ~/.supabase-cli, restore it"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Initialize configuration on first use",
+          "Backup configuration regularly",
+          "Use version control for configuration",
+          "Document configuration setup"
+        ],
+        "validation": "Check configuration exists before operations",
+        "automation": "Add configuration initialization to setup scripts"
+      },
+      "related_errors": ["CONFIG_NOT_LOADED", "CONFIG_LOAD_FAILED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can guide user through configuration initialization",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "MISSING_CREDENTIALS",
+      "name": "Missing Credentials",
+      "category": "authentication",
+      "severity": 1,
+      "http_status": 401,
+      "description": "Required authentication credentials are not provided",
+      "common_causes": [
+        "Access token not configured",
+        "Environment variable not set",
+        "Profile has no token",
+        "Token was cleared"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Set access token",
+          "commands": [
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Configure your Supabase access token"
+        },
+        {
+          "priority": 2,
+          "solution": "Set environment variable",
+          "commands": [],
+          "explanation": "Set SUPABASE_ACCESS_TOKEN environment variable"
+        },
+        {
+          "priority": 3,
+          "solution": "Create profile with token",
+          "commands": [
+            "supabase-cli config:create-profile <name> <project-ref>",
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Create new profile and configure token"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Always configure token after CLI installation",
+          "Use environment variables in CI/CD",
+          "Store tokens securely",
+          "Verify token is set before operations"
+        ],
+        "validation": "Check credentials exist before API calls",
+        "automation": "Add credential validation to scripts"
+      },
+      "related_errors": ["INVALID_TOKEN", "UNAUTHORIZED", "TOKEN_EXPIRED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot recover without credentials from user",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "NETWORK_ERROR",
+      "name": "Network Error",
+      "category": "network",
+      "severity": 2,
+      "http_status": 503,
+      "description": "A network error occurred during API communication",
+      "common_causes": [
+        "Internet connection lost",
+        "DNS resolution failure",
+        "Network timeout",
+        "Firewall blocking connection"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check internet connectivity",
+          "commands": [],
+          "explanation": "Verify you have stable internet connection"
+        },
+        {
+          "priority": 2,
+          "solution": "Wait and retry",
+          "commands": [],
+          "explanation": "Network issues may be transient; retry after a moment"
+        },
+        {
+          "priority": 3,
+          "solution": "Check firewall and proxy",
+          "commands": [],
+          "explanation": "Ensure firewall allows HTTPS to api.supabase.com"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use stable network connection",
+          "Implement retry logic",
+          "Configure proxy if needed",
+          "Monitor network health"
+        ],
+        "validation": "Test network connectivity before batch operations",
+        "automation": "Add network health checks to scripts"
+      },
+      "related_errors": ["CONNECTION_ERROR", "TIMEOUT", "API_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should retry automatically with exponential backoff",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "NO_PROJECT_REF",
+      "name": "No Project Reference",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "No project reference is configured or provided",
+      "common_causes": [
+        "Profile has no project reference",
+        "Project ref not provided as argument",
+        "Using wrong profile",
+        "Configuration is incomplete"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Provide project reference as argument",
+          "commands": [
+            "supabase-cli <command> <project-ref>"
+          ],
+          "explanation": "Explicitly provide project ref in the command"
+        },
+        {
+          "priority": 2,
+          "solution": "Set project in current profile",
+          "commands": [
+            "supabase-cli projects:list",
+            "supabase-cli config:create-profile <name> <project-ref>"
+          ],
+          "explanation": "Configure profile with project reference"
+        },
+        {
+          "priority": 3,
+          "solution": "Switch to profile with project",
+          "commands": [
+            "supabase-cli config:list-profiles",
+            "supabase-cli config:set-profile <profile-name>"
+          ],
+          "explanation": "Use a profile that has project configured"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Always configure project in profiles",
+          "Use explicit project refs in scripts",
+          "Validate profile has project before operations",
+          "Document required project context"
+        ],
+        "validation": "Check project ref exists before operations",
+        "automation": "Add project validation to scripts"
+      },
+      "related_errors": ["INVALID_PROJECT_REF", "PROFILE_NO_PROJECT_REF", "MISSING_CONFIG"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list projects and create profile with selection",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "NOT_FOUND",
+      "name": "Resource Not Found",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 404,
+      "description": "The requested resource does not exist",
+      "common_causes": [
+        "Resource ID is incorrect",
+        "Resource was deleted",
+        "Using wrong project",
+        "Typo in identifier"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Verify resource identifier",
+          "commands": [
+            "supabase-cli <resource>:list <project-ref>"
+          ],
+          "explanation": "List resources to find the correct identifier"
+        },
+        {
+          "priority": 2,
+          "solution": "Check project context",
+          "commands": [
+            "supabase-cli config:show-current"
+          ],
+          "explanation": "Ensure you're working with the correct project"
+        },
+        {
+          "priority": 3,
+          "solution": "Create the resource if needed",
+          "commands": [
+            "supabase-cli <resource>:create <project-ref>"
+          ],
+          "explanation": "If the resource should exist, create it"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Verify resource existence before operations",
+          "Use resource listing to get correct IDs",
+          "Document resource identifiers",
+          "Implement resource validation"
+        ],
+        "validation": "Check resource exists before operations",
+        "automation": "Add resource validation to scripts"
+      },
+      "related_errors": ["PROJECT_NOT_FOUND", "BUCKET_NOT_FOUND", "PROFILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list resources and suggest correct identifiers",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "PROFILE_ALREADY_EXISTS",
+      "name": "Profile Already Exists",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 409,
+      "description": "A profile with this name already exists",
+      "common_causes": [
+        "Attempting to create duplicate profile",
+        "Profile name conflict",
+        "Previous profile not deleted"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Use the existing profile",
+          "commands": [
+            "supabase-cli config:set-profile <name>"
+          ],
+          "explanation": "Switch to and use the existing profile"
+        },
+        {
+          "priority": 2,
+          "solution": "Choose a different profile name",
+          "commands": [
+            "supabase-cli config:create-profile <different-name> <project-ref>"
+          ],
+          "explanation": "Create profile with a unique name"
+        },
+        {
+          "priority": 3,
+          "solution": "Delete and recreate",
+          "commands": [
+            "supabase-cli config:delete-profile <name>",
+            "supabase-cli config:create-profile <name> <project-ref>"
+          ],
+          "explanation": "Remove existing profile and create new one"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "List profiles before creating new ones",
+          "Use descriptive, unique profile names",
+          "Document profile naming conventions",
+          "Check existence before creation"
+        ],
+        "validation": "Verify profile doesn't exist before creation",
+        "automation": "Add profile existence checks to scripts"
+      },
+      "related_errors": ["ALREADY_EXISTS", "PROFILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can suggest using existing profile or different name",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "PROFILE_NO_PROJECT_REF",
+      "name": "Profile Missing Project Reference",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 400,
+      "description": "The active profile does not have a project reference configured",
+      "common_causes": [
+        "Profile created without project reference",
+        "Project reference was removed",
+        "Configuration corruption",
+        "Incomplete profile setup"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Update profile with project reference",
+          "commands": [
+            "supabase-cli projects:list",
+            "supabase-cli config:create-profile <name> <project-ref>"
+          ],
+          "explanation": "Recreate profile with valid project reference"
+        },
+        {
+          "priority": 2,
+          "solution": "Switch to profile with project",
+          "commands": [
+            "supabase-cli config:list-profiles",
+            "supabase-cli config:set-profile <profile-name>"
+          ],
+          "explanation": "Use a different profile that has project configured"
+        },
+        {
+          "priority": 3,
+          "solution": "Provide project ref explicitly",
+          "commands": [
+            "supabase-cli <command> <project-ref>"
+          ],
+          "explanation": "Override missing profile config with explicit argument"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Always include project ref when creating profiles",
+          "Validate profile completeness",
+          "Document profile requirements",
+          "Use profile templates"
+        ],
+        "validation": "Verify profile has project ref before operations",
+        "automation": "Add profile validation to scripts"
+      },
+      "related_errors": ["NO_PROJECT_REF", "INVALID_PROJECT_REF", "PROFILE_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list projects and update profile automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "PROFILE_NOT_FOUND",
+      "name": "Profile Not Found",
+      "category": "configuration",
+      "severity": 2,
+      "http_status": 404,
+      "description": "The specified configuration profile does not exist",
+      "common_causes": [
+        "Typo in profile name",
+        "Profile was deleted",
+        "Profile never created",
+        "Using wrong profile name"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "List available profiles",
+          "commands": [
+            "supabase-cli config:list-profiles"
+          ],
+          "explanation": "See all available profiles and use correct name"
+        },
+        {
+          "priority": 2,
+          "solution": "Create the profile",
+          "commands": [
+            "supabase-cli config:create-profile <name> <project-ref>"
+          ],
+          "explanation": "Create the missing profile"
+        },
+        {
+          "priority": 3,
+          "solution": "Use default profile",
+          "commands": [
+            "supabase-cli config:set-profile default"
+          ],
+          "explanation": "Switch to default profile if available"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "List profiles to verify names before switching",
+          "Use tab completion for profile names",
+          "Document profile names",
+          "Maintain at least default profile"
+        ],
+        "validation": "Verify profile exists before operations",
+        "automation": "Add profile existence checks to scripts"
+      },
+      "related_errors": ["NOT_FOUND", "PROFILE_ALREADY_EXISTS", "MISSING_CONFIG"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list profiles and suggest correct names",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "PROJECT_CREATION_FAILED",
+      "name": "Project Creation Failed",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 500,
+      "description": "Failed to create a new Supabase project",
+      "common_causes": [
+        "Organization limits reached",
+        "Invalid project configuration",
+        "Billing issues",
+        "Region unavailable"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check organization limits and billing",
+          "commands": [
+            "supabase-cli projects:list"
+          ],
+          "explanation": "Verify you haven't reached project limits for your plan"
+        },
+        {
+          "priority": 2,
+          "solution": "Validate project configuration",
+          "commands": [],
+          "explanation": "Ensure all required parameters are valid"
+        },
+        {
+          "priority": 3,
+          "solution": "Try different region",
+          "commands": [],
+          "explanation": "Some regions may be temporarily unavailable"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Verify organization limits before creation",
+          "Ensure billing is active",
+          "Use valid configuration parameters",
+          "Monitor project quota"
+        ],
+        "validation": "Check organization limits before creation",
+        "automation": "Add quota checks to project creation scripts"
+      },
+      "related_errors": ["ALREADY_EXISTS", "VALIDATION_ERROR", "API_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot create projects without resolving underlying issues",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "PROJECT_DELETION_FAILED",
+      "name": "Project Deletion Failed",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 500,
+      "description": "Failed to delete the Supabase project",
+      "common_causes": [
+        "Project has active resources",
+        "Insufficient permissions",
+        "Project is in use",
+        "API error during deletion"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Check project status and resources",
+          "commands": [
+            "supabase-cli projects:get <project-ref>"
+          ],
+          "explanation": "Verify project state and active resources"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify permissions",
+          "commands": [],
+          "explanation": "Ensure you have admin/owner permissions for the project"
+        },
+        {
+          "priority": 3,
+          "solution": "Contact support for manual deletion",
+          "commands": [],
+          "explanation": "If deletion continues to fail, contact Supabase support"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Clean up resources before deletion",
+          "Verify permissions before attempting deletion",
+          "Back up data before deletion",
+          "Document deletion procedures"
+        ],
+        "validation": "Check project status before deletion",
+        "automation": "Add resource cleanup to deletion scripts"
+      },
+      "related_errors": ["UNAUTHORIZED", "API_ERROR", "PROJECT_NOT_FOUND"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot force deletion but can check status",
+        "user_action_required": true,
+        "escalation_needed": true
+      }
+    },
+    {
+      "code": "PROJECT_NOT_FOUND",
+      "name": "Project Not Found",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 404,
+      "description": "The specified Supabase project does not exist",
+      "common_causes": [
+        "Incorrect project reference",
+        "Project was deleted",
+        "Using project from different account",
+        "Typo in project ref"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "List available projects",
+          "commands": [
+            "supabase-cli projects:list"
+          ],
+          "explanation": "Get correct project reference from your projects"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify account and token",
+          "commands": [
+            "supabase-cli config:show-current"
+          ],
+          "explanation": "Ensure you're authenticated to the correct account"
+        },
+        {
+          "priority": 3,
+          "solution": "Check project in dashboard",
+          "commands": [],
+          "explanation": "Verify project exists in Supabase dashboard"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use configuration profiles for project refs",
+          "Copy project refs from dashboard",
+          "Verify project exists before operations",
+          "Document project references"
+        ],
+        "validation": "Validate project ref format and existence",
+        "automation": "Use profiles instead of manual project refs"
+      },
+      "related_errors": ["NOT_FOUND", "INVALID_PROJECT_REF", "UNAUTHORIZED"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can list projects and suggest correct reference",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "QUERY_ERROR",
+      "name": "Database Query Error",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 400,
+      "description": "An error occurred while executing a database query",
+      "common_causes": [
+        "Invalid SQL syntax",
+        "Table or column doesn't exist",
+        "Permission denied",
+        "Constraint violation"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Review and fix SQL query",
+          "commands": [
+            "supabase-cli db:query <project-ref> --query <fixed-query>"
+          ],
+          "explanation": "Check SQL syntax and schema"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify table and column names",
+          "commands": [
+            "supabase-cli db:schema <project-ref>"
+          ],
+          "explanation": "Ensure referenced objects exist"
+        },
+        {
+          "priority": 3,
+          "solution": "Check permissions",
+          "commands": [
+            "supabase-cli security:policies:list <project-ref>"
+          ],
+          "explanation": "Verify you have required permissions"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate SQL before execution",
+          "Use parameterized queries",
+          "Test queries in development",
+          "Understand database schema"
+        ],
+        "validation": "Use SQL linting tools",
+        "automation": "Add SQL validation to CI/CD"
+      },
+      "related_errors": ["DATABASE_ERROR", "VALIDATION_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can attempt to fix SQL syntax errors",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "RATE_LIMIT",
+      "name": "Rate Limit Exceeded",
+      "category": "rate_limit",
+      "severity": 2,
+      "http_status": 429,
+      "description": "Too many requests sent in a given time period",
+      "common_causes": [
+        "Sending requests too quickly",
+        "Batch operations without throttling",
+        "Multiple CLI instances running",
+        "Hitting API quota limits"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Wait and retry with backoff",
+          "commands": [],
+          "explanation": "CLI will automatically retry with exponential backoff"
+        },
+        {
+          "priority": 2,
+          "solution": "Reduce request rate",
+          "commands": [],
+          "explanation": "Add delays between requests in batch operations"
+        },
+        {
+          "priority": 3,
+          "solution": "Upgrade plan for higher limits",
+          "commands": [],
+          "explanation": "Consider upgrading if you consistently hit limits"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Implement request throttling",
+          "Use exponential backoff for retries",
+          "Cache frequently accessed data",
+          "Batch operations efficiently"
+        ],
+        "validation": "Monitor request rates",
+        "automation": "Add rate limiting to scripts"
+      },
+      "related_errors": ["TIMEOUT", "API_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should wait and retry automatically with backoff",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "STORAGE_ERROR",
+      "name": "Storage Error",
+      "category": "resource",
+      "severity": 2,
+      "http_status": 500,
+      "description": "An error occurred with storage operations",
+      "common_causes": [
+        "Bucket doesn't exist",
+        "File size exceeds limits",
+        "Permission denied",
+        "Storage quota exceeded"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Verify bucket exists",
+          "commands": [
+            "supabase-cli storage:buckets:list <project-ref>"
+          ],
+          "explanation": "Ensure target bucket exists"
+        },
+        {
+          "priority": 2,
+          "solution": "Check file size and quota",
+          "commands": [],
+          "explanation": "Verify file size is within limits and quota is available"
+        },
+        {
+          "priority": 3,
+          "solution": "Verify storage permissions",
+          "commands": [],
+          "explanation": "Ensure you have permission for the storage operation"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate bucket existence before operations",
+          "Check file sizes before upload",
+          "Monitor storage quota",
+          "Set appropriate bucket permissions"
+        ],
+        "validation": "Verify storage prerequisites before operations",
+        "automation": "Add storage validation to scripts"
+      },
+      "related_errors": ["BUCKET_NOT_FOUND", "VALIDATION_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can verify bucket existence and permissions",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "TIMEOUT",
+      "name": "Request Timeout",
+      "category": "network",
+      "severity": 2,
+      "http_status": 408,
+      "description": "The request exceeded the maximum allowed time",
+      "common_causes": [
+        "Slow network connection",
+        "Large data transfer",
+        "Server processing time too long",
+        "Network congestion"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Retry the operation",
+          "commands": [],
+          "explanation": "CLI will automatically retry with timeout backoff"
+        },
+        {
+          "priority": 2,
+          "solution": "Check network connection",
+          "commands": [],
+          "explanation": "Ensure stable, fast internet connection"
+        },
+        {
+          "priority": 3,
+          "solution": "Break operation into smaller chunks",
+          "commands": [],
+          "explanation": "For large operations, process in smaller batches"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use stable network connection",
+          "Break large operations into chunks",
+          "Implement appropriate timeout values",
+          "Monitor operation performance"
+        ],
+        "validation": "Test network speed before large operations",
+        "automation": "Add timeout handling to scripts"
+      },
+      "related_errors": ["NETWORK_ERROR", "CONNECTION_ERROR", "API_ERROR"],
+      "is_retryable": true,
+      "ai_guidance": {
+        "auto_recovery": "AI should retry automatically with increased timeout",
+        "user_action_required": false,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "TOKEN_EXPIRED",
+      "name": "Access Token Expired",
+      "category": "authentication",
+      "severity": 1,
+      "http_status": 401,
+      "description": "The access token has expired and needs to be refreshed",
+      "common_causes": [
+        "Token reached expiration time",
+        "Token was revoked",
+        "Using old token after rotation"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Generate new access token",
+          "commands": [
+            "supabase-cli config:set-token <new-token>"
+          ],
+          "explanation": "Create fresh token in Supabase dashboard and update config"
+        },
+        {
+          "priority": 2,
+          "solution": "Verify token in dashboard",
+          "commands": [],
+          "explanation": "Check if token still exists and is active"
+        },
+        {
+          "priority": 3,
+          "solution": "Rotate tokens regularly",
+          "commands": [],
+          "explanation": "Implement token rotation policy to prevent expiration issues"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Monitor token expiration dates",
+          "Implement token rotation schedule",
+          "Use long-lived tokens for automation",
+          "Set up token expiration alerts"
+        ],
+        "validation": "Check token validity before critical operations",
+        "automation": "Implement automatic token rotation in CI/CD"
+      },
+      "related_errors": ["INVALID_TOKEN", "UNAUTHORIZED", "MISSING_CREDENTIALS"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot refresh token without user providing new one",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "UNAUTHORIZED",
+      "name": "Unauthorized Access",
+      "category": "authentication",
+      "severity": 1,
+      "http_status": 401,
+      "description": "Authentication failed or insufficient permissions",
+      "common_causes": [
+        "Invalid or missing access token",
+        "Insufficient permissions for operation",
+        "Token belongs to wrong account",
+        "API key instead of access token used"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Verify and update access token",
+          "commands": [
+            "supabase-cli config:set-token <token>"
+          ],
+          "explanation": "Ensure you're using a valid personal access token"
+        },
+        {
+          "priority": 2,
+          "solution": "Check account permissions",
+          "commands": [],
+          "explanation": "Verify you have required permissions for the operation"
+        },
+        {
+          "priority": 3,
+          "solution": "Verify correct account",
+          "commands": [
+            "supabase-cli projects:list"
+          ],
+          "explanation": "Ensure token is for the correct Supabase account"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Use personal access tokens, not API keys",
+          "Verify token belongs to correct account",
+          "Maintain proper access permissions",
+          "Secure token storage"
+        ],
+        "validation": "Validate token before operations",
+        "automation": "Use environment-specific tokens in CI/CD"
+      },
+      "related_errors": ["INVALID_TOKEN", "TOKEN_EXPIRED", "MISSING_CREDENTIALS"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI cannot fix authentication without valid credentials",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    },
+    {
+      "code": "UNKNOWN_ERROR",
+      "name": "Unknown Error",
+      "category": "internal",
+      "severity": 2,
+      "http_status": 500,
+      "description": "An unexpected error occurred that doesn't match known error types",
+      "common_causes": [
+        "Unhandled exception",
+        "New API error type",
+        "Corrupted data",
+        "Unexpected system state"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Retry the operation",
+          "commands": [],
+          "explanation": "Unknown errors may be transient"
+        },
+        {
+          "priority": 2,
+          "solution": "Check CLI and API versions",
+          "commands": [],
+          "explanation": "Ensure you're using compatible CLI and API versions"
+        },
+        {
+          "priority": 3,
+          "solution": "Report the error",
+          "commands": [],
+          "explanation": "Report to CLI maintainers with full error details for investigation"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Keep CLI updated to latest version",
+          "Log full error details for debugging",
+          "Report unknown errors to help improve CLI",
+          "Use stable API features"
+        ],
+        "validation": "Validate input thoroughly to reduce unknown errors",
+        "automation": "Add comprehensive error logging to scripts"
+      },
+      "related_errors": ["INTERNAL_ERROR", "API_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI should attempt one retry then escalate",
+        "user_action_required": false,
+        "escalation_needed": true
+      }
+    },
+    {
+      "code": "VALIDATION_ERROR",
+      "name": "Validation Error",
+      "category": "validation",
+      "severity": 2,
+      "http_status": 422,
+      "description": "Input validation failed due to invalid or malformed data",
+      "common_causes": [
+        "Missing required fields",
+        "Invalid data format",
+        "Data doesn't meet constraints",
+        "Type mismatch"
+      ],
+      "solutions": [
+        {
+          "priority": 1,
+          "solution": "Review validation error details",
+          "commands": [],
+          "explanation": "Check error message for specific validation failures"
+        },
+        {
+          "priority": 2,
+          "solution": "Correct the input data",
+          "commands": [
+            "supabase-cli <command> --help"
+          ],
+          "explanation": "Review command documentation and provide valid input"
+        },
+        {
+          "priority": 3,
+          "solution": "Verify data types and formats",
+          "commands": [],
+          "explanation": "Ensure all inputs match expected types and formats"
+        }
+      ],
+      "prevention": {
+        "best_practices": [
+          "Validate input before sending to API",
+          "Follow API documentation strictly",
+          "Use schema validation tools",
+          "Test with valid data first"
+        ],
+        "validation": "Implement client-side validation",
+        "automation": "Add input validation to scripts"
+      },
+      "related_errors": ["INVALID_INPUT", "QUERY_ERROR"],
+      "is_retryable": false,
+      "ai_guidance": {
+        "auto_recovery": "AI can fix common validation issues automatically",
+        "user_action_required": true,
+        "escalation_needed": false
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import { Args, Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, OutputFormatFlags } from '../../base-flags'
+import { AutomationFlags, ConfirmationFlags, OutputFormatFlags } from '../../base-flags'
+import { SuccessMessages, WarningMessages } from '../../error-messages'
 import { CreateProjectConfig, createProject } from '../../supabase'
 
 export default class ProjectsCreate extends BaseCommand {
@@ -20,12 +21,14 @@ export default class ProjectsCreate extends BaseCommand {
     '<%= config.bin %> <%= command.id %> "My Project" --region us-east-1 --org org_abc123',
     '<%= config.bin %> <%= command.id %> "Production App" --region eu-west-1 --org org_abc123 --plan pro',
     '<%= config.bin %> <%= command.id %> "Test DB" --region us-west-2 --org org_abc123 --db-pass "SecurePass123!"',
+    '<%= config.bin %> <%= command.id %> "Dev Environment" -r us-east-1 --org org_abc123 --yes',
   ]
 
   static flags = {
     ...BaseCommand.baseFlags,
     ...OutputFormatFlags,
     ...AutomationFlags,
+    ...ConfirmationFlags,
     'db-pass': Flags.string({
       description: 'Database password (min 6 characters)',
       required: false,
@@ -59,12 +62,17 @@ export default class ProjectsCreate extends BaseCommand {
     const { args, flags } = await this.parse(ProjectsCreate)
 
     try {
+      if (!flags.quiet) {
+        this.header('Create New Project')
+      }
+
       // Generate a default password if not provided
       const dbPassword = flags['db-pass'] || this.generateDefaultPassword()
 
       if (!flags['db-pass'] && !flags.quiet) {
         this.warning('No database password provided. Using generated password.')
         this.info(`Generated password: ${dbPassword}`)
+        this.warning('Save this password securely - you will need it to connect to your database.')
       }
 
       // Confirm action
@@ -75,7 +83,7 @@ export default class ProjectsCreate extends BaseCommand {
         )
 
         if (!confirmed) {
-          this.info('Project creation cancelled')
+          this.warning(WarningMessages.OPERATION_CANCELLED())
           process.exit(0)
         }
       }
@@ -100,20 +108,17 @@ export default class ProjectsCreate extends BaseCommand {
 
       // Output results
       if (!flags.quiet) {
-        this.header('Project Created')
-      }
-
-      this.output(project)
-
-      if (!flags.quiet) {
         this.divider()
-        this.success(`Project ${project.name} created successfully!`)
+        this.success(SuccessMessages.PROJECT_CREATED(project.name))
         this.info(`Project ID: ${project.id}`)
         this.info(`Project Ref: ${project.ref}`)
         this.info(`Region: ${project.region}`)
         this.info(`Status: ${project.status}`)
+        this.divider()
         this.warning('Note: Project provisioning may take 3-5 minutes to complete.')
       }
+
+      this.output(project)
 
       process.exit(0)
     } catch (error) {

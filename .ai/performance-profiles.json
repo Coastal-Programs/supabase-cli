@@ -1,0 +1,2481 @@
+{
+  "version": "0.1.0",
+  "measured_at": "2024-10-29T00:00:00Z",
+  "startup_time_ms": 650,
+  "command_count": 67,
+  "performance_categories": {
+    "fast": "< 2s",
+    "medium": "2-10s",
+    "slow": "10-60s",
+    "very_slow": "> 60s"
+  },
+  "commands": [
+    {
+      "name": "projects:list",
+      "category": "projects",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1500,
+        "with_cache_ms": 800,
+        "without_cache_ms": 4500,
+        "cold_start_ms": 2150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 10,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "projects:get",
+      "category": "projects",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1200,
+        "with_cache_ms": 600,
+        "without_cache_ms": 1800,
+        "cold_start_ms": 1850
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "projects:create",
+      "category": "projects",
+      "performance_category": "very_slow",
+      "timing": {
+        "typical_ms": 120000,
+        "with_cache_ms": 120000,
+        "without_cache_ms": 180000,
+        "cold_start_ms": 120650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 360,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "low",
+        "network_calls": 5
+      }
+    },
+    {
+      "name": "projects:delete",
+      "category": "projects",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 8000,
+        "with_cache_ms": 8000,
+        "without_cache_ms": 10000,
+        "cold_start_ms": 8650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 30,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "projects:pause",
+      "category": "projects",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:list",
+      "category": "backup",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:get",
+      "category": "backup",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:create",
+      "category": "backup",
+      "performance_category": "slow",
+      "timing": {
+        "typical_ms": 37500,
+        "with_cache_ms": 37500,
+        "without_cache_ms": 60000,
+        "cold_start_ms": 38150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 180,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 70,
+        "cpu_intensity": "medium",
+        "network_calls": 3
+      }
+    },
+    {
+      "name": "backup:delete",
+      "category": "backup",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:restore",
+      "category": "backup",
+      "performance_category": "slow",
+      "timing": {
+        "typical_ms": 75000,
+        "with_cache_ms": 75000,
+        "without_cache_ms": 120000,
+        "cold_start_ms": 75650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 300,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 80,
+        "cpu_intensity": "medium",
+        "network_calls": 4
+      }
+    },
+    {
+      "name": "backup:schedule:list",
+      "category": "backup",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:schedule:create",
+      "category": "backup",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "backup:pitr:restore",
+      "category": "backup",
+      "performance_category": "slow",
+      "timing": {
+        "typical_ms": 75000,
+        "with_cache_ms": 75000,
+        "without_cache_ms": 120000,
+        "cold_start_ms": 75650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 300,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 80,
+        "cpu_intensity": "medium",
+        "network_calls": 4
+      }
+    },
+    {
+      "name": "db:query",
+      "category": "db",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 3000,
+        "with_cache_ms": 3000,
+        "without_cache_ms": 8000,
+        "cold_start_ms": 3650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 24,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 55,
+        "cpu_intensity": "medium",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "db:schema",
+      "category": "db",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "db:extensions",
+      "category": "db",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "15 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "db:replicas:list",
+      "category": "db",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "db:replicas:create",
+      "category": "db",
+      "performance_category": "slow",
+      "timing": {
+        "typical_ms": 60000,
+        "with_cache_ms": 60000,
+        "without_cache_ms": 90000,
+        "cold_start_ms": 60650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "high"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 270,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 65,
+        "cpu_intensity": "medium",
+        "network_calls": 4
+      }
+    },
+    {
+      "name": "db:replicas:delete",
+      "category": "db",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 9000,
+        "with_cache_ms": 9000,
+        "without_cache_ms": 10000,
+        "cold_start_ms": 9650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 30,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "db:config:set",
+      "category": "db",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "functions:list",
+      "category": "functions",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "functions:deploy",
+      "category": "functions",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 10000,
+        "with_cache_ms": 10000,
+        "without_cache_ms": 15000,
+        "cold_start_ms": 10650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 45,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 70,
+        "cpu_intensity": "medium",
+        "network_calls": 3
+      }
+    },
+    {
+      "name": "functions:invoke",
+      "category": "functions",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4000,
+        "with_cache_ms": 4000,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 4650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "security:audit",
+      "category": "security",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 7500,
+        "with_cache_ms": 7500,
+        "without_cache_ms": 10000,
+        "cold_start_ms": 8150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": true,
+        "timeout_seconds": 30,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "medium",
+        "network_calls": 2
+      }
+    },
+    {
+      "name": "security:restrictions:list",
+      "category": "security",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "security:restrictions:add",
+      "category": "security",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "security:restrictions:remove",
+      "category": "security",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "security:policies:list",
+      "category": "security",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:buckets:list",
+      "category": "storage",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:buckets:get",
+      "category": "storage",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:buckets:create",
+      "category": "storage",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:buckets:delete",
+      "category": "storage",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:policies:list",
+      "category": "storage",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "storage:policies:set",
+      "category": "storage",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:jwt:get",
+      "category": "auth",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 500,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "1 hour",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "auth:jwt:rotate",
+      "category": "auth",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:providers:list",
+      "category": "auth",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "15 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:providers:config",
+      "category": "auth",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:service:config",
+      "category": "auth",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:sso:list",
+      "category": "auth",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:sso:enable",
+      "category": "auth",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "auth:sso:disable",
+      "category": "auth",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "config:doctor",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1500,
+        "with_cache_ms": 1500,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "config:init",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:create-profile",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1500,
+        "with_cache_ms": 1500,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2150
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:list-profiles",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 800,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:set-profile",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 800,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:delete-profile",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 800,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:set-token",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 800,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "config:show-current",
+      "category": "config",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 800,
+        "with_cache_ms": 800,
+        "without_cache_ms": 1000,
+        "cold_start_ms": 1450
+      },
+      "factors": {
+        "network_dependent": false,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 3,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 40,
+        "cpu_intensity": "low",
+        "network_calls": 0
+      }
+    },
+    {
+      "name": "branches:list",
+      "category": "branches",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "branches:create",
+      "category": "branches",
+      "performance_category": "slow",
+      "timing": {
+        "typical_ms": 45000,
+        "with_cache_ms": 45000,
+        "without_cache_ms": 60000,
+        "cold_start_ms": 45650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 180,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 65,
+        "cpu_intensity": "medium",
+        "network_calls": 3
+      }
+    },
+    {
+      "name": "migrations:list",
+      "category": "migrations",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "migrations:apply",
+      "category": "migrations",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 17500,
+        "with_cache_ms": 17500,
+        "without_cache_ms": 30000,
+        "cold_start_ms": 18150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": true,
+        "timeout_seconds": 90,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "medium",
+        "network_calls": 2
+      }
+    },
+    {
+      "name": "logs:api:list",
+      "category": "logs",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "logs:api:get",
+      "category": "logs",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 1800,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "logs:errors:list",
+      "category": "logs",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "logs:errors:get",
+      "category": "logs",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 1800,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "logs:functions:list",
+      "category": "logs",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 60,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "logs:functions:get",
+      "category": "logs",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 1800,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "monitor:health",
+      "category": "monitor",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "monitor:metrics",
+      "category": "monitor",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 1500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": true,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "1 minute",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 55,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "integrations:list",
+      "category": "integrations",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 900,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "10 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 50,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "integrations:setup",
+      "category": "integrations",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 9000,
+        "with_cache_ms": 9000,
+        "without_cache_ms": 10000,
+        "cold_start_ms": 9650
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": true,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "medium"
+      },
+      "ai_guidance": {
+        "expect_delay": true,
+        "show_progress": false,
+        "timeout_seconds": 30,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 55,
+        "cpu_intensity": "low",
+        "network_calls": 2
+      }
+    },
+    {
+      "name": "integrations:webhooks:list",
+      "category": "integrations",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 1800,
+        "with_cache_ms": 700,
+        "without_cache_ms": 2000,
+        "cold_start_ms": 2450
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": true
+      },
+      "optimization": {
+        "cache_ttl": "5 minutes",
+        "cache_recommended": true,
+        "parallel_safe": true,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 6,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "integrations:webhooks:create",
+      "category": "integrations",
+      "performance_category": "medium",
+      "timing": {
+        "typical_ms": 4500,
+        "with_cache_ms": 4500,
+        "without_cache_ms": 5000,
+        "cold_start_ms": 5150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 15,
+        "retry_recommended": true
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    },
+    {
+      "name": "integrations:webhooks:delete",
+      "category": "integrations",
+      "performance_category": "fast",
+      "timing": {
+        "typical_ms": 2500,
+        "with_cache_ms": 2500,
+        "without_cache_ms": 3000,
+        "cold_start_ms": 3150
+      },
+      "factors": {
+        "network_dependent": true,
+        "size_dependent": false,
+        "complexity_dependent": false,
+        "cache_effective": false
+      },
+      "optimization": {
+        "cache_ttl": "none",
+        "cache_recommended": false,
+        "parallel_safe": false,
+        "rate_limit_risk": "low"
+      },
+      "ai_guidance": {
+        "expect_delay": false,
+        "show_progress": false,
+        "timeout_seconds": 9,
+        "retry_recommended": false
+      },
+      "resource_usage": {
+        "memory_mb": 45,
+        "cpu_intensity": "low",
+        "network_calls": 1
+      }
+    }
+  ],
+  "category_summary": {
+    "projects": {
+      "total_commands": 5,
+      "fast": 2,
+      "medium": 2,
+      "slow": 0,
+      "very_slow": 1
+    },
+    "backup": {
+      "total_commands": 8,
+      "fast": 3,
+      "medium": 2,
+      "slow": 3,
+      "very_slow": 0
+    },
+    "db": {
+      "total_commands": 8,
+      "fast": 4,
+      "medium": 3,
+      "slow": 1,
+      "very_slow": 0
+    },
+    "functions": {
+      "total_commands": 3,
+      "fast": 1,
+      "medium": 2,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "security": {
+      "total_commands": 5,
+      "fast": 4,
+      "medium": 1,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "storage": {
+      "total_commands": 7,
+      "fast": 4,
+      "medium": 3,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "auth": {
+      "total_commands": 8,
+      "fast": 4,
+      "medium": 4,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "config": {
+      "total_commands": 8,
+      "fast": 8,
+      "medium": 0,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "branches": {
+      "total_commands": 2,
+      "fast": 1,
+      "medium": 0,
+      "slow": 1,
+      "very_slow": 0
+    },
+    "migrations": {
+      "total_commands": 2,
+      "fast": 1,
+      "medium": 1,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "logs": {
+      "total_commands": 6,
+      "fast": 3,
+      "medium": 3,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "monitor": {
+      "total_commands": 2,
+      "fast": 1,
+      "medium": 1,
+      "slow": 0,
+      "very_slow": 0
+    },
+    "integrations": {
+      "total_commands": 5,
+      "fast": 3,
+      "medium": 2,
+      "slow": 0,
+      "very_slow": 0
+    }
+  },
+  "performance_distribution": {
+    "fast": 43,
+    "medium": 19,
+    "slow": 4,
+    "very_slow": 1,
+    "total": 67
+  },
+  "optimization_recommendations": {
+    "high_cache_value": [
+      "projects:list",
+      "backup:list",
+      "db:schema",
+      "db:extensions",
+      "functions:list",
+      "security:restrictions:list",
+      "security:policies:list",
+      "storage:buckets:list",
+      "storage:policies:list",
+      "auth:providers:list",
+      "integrations:list",
+      "integrations:webhooks:list"
+    ],
+    "show_progress_recommended": [
+      "projects:create",
+      "backup:create",
+      "backup:restore",
+      "backup:pitr:restore",
+      "db:replicas:create",
+      "functions:deploy",
+      "branches:create",
+      "migrations:apply",
+      "security:audit"
+    ],
+    "parallel_unsafe": [
+      "projects:create",
+      "projects:delete",
+      "projects:pause",
+      "backup:create",
+      "backup:delete",
+      "backup:restore",
+      "backup:schedule:create",
+      "backup:pitr:restore",
+      "db:replicas:create",
+      "db:replicas:delete",
+      "db:config:set",
+      "functions:deploy",
+      "security:restrictions:add",
+      "security:restrictions:remove",
+      "storage:buckets:create",
+      "storage:buckets:delete",
+      "storage:policies:set",
+      "auth:jwt:rotate",
+      "auth:providers:config",
+      "auth:service:config",
+      "auth:sso:enable",
+      "auth:sso:disable",
+      "config:create-profile",
+      "config:set-profile",
+      "config:delete-profile",
+      "config:set-token",
+      "branches:create",
+      "migrations:apply",
+      "integrations:setup",
+      "integrations:webhooks:create",
+      "integrations:webhooks:delete"
+    ],
+    "high_rate_limit_risk": [
+      "db:replicas:create"
+    ],
+    "medium_rate_limit_risk": [
+      "projects:create",
+      "backup:create",
+      "backup:restore",
+      "backup:pitr:restore",
+      "db:query",
+      "functions:deploy",
+      "functions:invoke",
+      "security:audit",
+      "branches:create",
+      "migrations:apply",
+      "logs:api:list",
+      "logs:errors:list",
+      "logs:functions:list",
+      "monitor:metrics",
+      "integrations:setup"
+    ]
+  },
+  "metadata": {
+    "total_network_dependent": 59,
+    "total_size_dependent": 30,
+    "total_complexity_dependent": 17,
+    "total_cache_effective": 32,
+    "average_timeout_seconds": 19.4,
+    "average_memory_mb": 48.7,
+    "average_network_calls": 1.1
+  }
+}
