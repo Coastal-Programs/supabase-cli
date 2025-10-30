@@ -1967,7 +1967,7 @@ export async function listBackups(
     `${ref}:${options?.since || ''}:${options?.until || ''}`,
     async () => {
       const headers = await getAuthHeader()
-      let url = `${API_BASE_URL}/projects/${ref}/backups`
+      let url = `${API_BASE_URL}/projects/${ref}/database/backups`
 
       if (options?.since || options?.until) {
         const params = new URLSearchParams()
@@ -1997,7 +1997,7 @@ export async function getBackup(ref: string, backupId: string): Promise<Backup> 
     `${ref}:${backupId}`,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<Backup>(`${API_BASE_URL}/projects/${ref}/backups/${backupId}`, {
+      return enhancedFetch<Backup>(`${API_BASE_URL}/projects/${ref}/database/backups/${backupId}`, {
         headers: {
           ...headers,
           'Content-Type': 'application/json',
@@ -2015,7 +2015,7 @@ export async function getBackup(ref: string, backupId: string): Promise<Backup> 
 export async function createBackup(ref: string, description?: string): Promise<Backup> {
   const headers = await getAuthHeader()
   const result = await enhancedFetch<Backup>(
-    `${API_BASE_URL}/projects/${ref}/backups`,
+    `${API_BASE_URL}/projects/${ref}/database/backups`,
     {
       body: JSON.stringify({ description }),
       headers: {
@@ -2039,7 +2039,7 @@ export async function createBackup(ref: string, description?: string): Promise<B
 export async function deleteBackup(ref: string, backupId: string): Promise<void> {
   const headers = await getAuthHeader()
   await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/backups/${backupId}`,
+    `${API_BASE_URL}/projects/${ref}/database/backups/${backupId}`,
     {
       headers: {
         ...headers,
@@ -2061,7 +2061,7 @@ export async function deleteBackup(ref: string, backupId: string): Promise<void>
 export async function restoreFromBackup(ref: string, backupId: string): Promise<RestoreStatus> {
   const headers = await getAuthHeader()
   const result = await enhancedFetch<RestoreStatus>(
-    `${API_BASE_URL}/projects/${ref}/backups/${backupId}/restore`,
+    `${API_BASE_URL}/projects/${ref}/database/backups/${backupId}/restore`,
     {
       headers: {
         ...headers,
@@ -2091,7 +2091,7 @@ export async function listBackupSchedules(ref: string): Promise<BackupSchedule[]
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<BackupSchedule[]>(`${API_BASE_URL}/projects/${ref}/backups/schedules`, {
+      return enhancedFetch<BackupSchedule[]>(`${API_BASE_URL}/projects/${ref}/database/backups/schedules`, {
         headers: {
           ...headers,
           'Content-Type': 'application/json',
@@ -2114,7 +2114,7 @@ export async function createBackupSchedule(
 ): Promise<BackupSchedule> {
   const headers = await getAuthHeader()
   const result = await enhancedFetch<BackupSchedule>(
-    `${API_BASE_URL}/projects/${ref}/backups/schedules`,
+    `${API_BASE_URL}/projects/${ref}/database/backups/schedules`,
     {
       body: JSON.stringify({
         enabled: true,
@@ -2143,7 +2143,7 @@ export async function createBackupSchedule(
 export async function restoreToPointInTime(ref: string, timestamp: string): Promise<RestoreStatus> {
   const headers = await getAuthHeader()
   const result = await enhancedFetch<RestoreStatus>(
-    `${API_BASE_URL}/projects/${ref}/backups/pitr/restore`,
+    `${API_BASE_URL}/projects/${ref}/database/backups/restore-pitr`,
     {
       body: JSON.stringify({ timestamp }),
       headers: {
