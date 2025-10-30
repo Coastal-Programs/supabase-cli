@@ -1,4 +1,8 @@
-# @coastal-programs/supabase-cli
+<div align="center">
+  <img src=".github/supabase-cli-logo.svg" alt="Supabase CLI Logo" width="200"/>
+
+  # @coastal-programs/supabase-cli
+</div>
 
 [![npm version](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli.svg)](https://badge.fury.io/js/@coastal-programs%2Fsupabase-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
