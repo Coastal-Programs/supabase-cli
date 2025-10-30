@@ -1,5 +1,10 @@
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, ConfirmationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import {
+  AutomationFlags,
+  ConfirmationFlags,
+  OutputFormatFlags,
+  ProjectFlags,
+} from '../../base-flags'
 import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
 import { deleteProject, getProject } from '../../supabase'
 

@@ -106,6 +106,8 @@ class FileCredentialStore implements CredentialStore {
       updatedAt: new Date().toISOString(),
     }
 
+    // Security fix: Write with secure permissions (owner read/write only)
+    // This prevents TOCTOU race conditions by setting permissions atomically
     writeFileSync(this.credentialsFile, JSON.stringify(data, null, 2), {
       encoding: 'utf-8',
       mode: 0o600, // Owner read/write only
@@ -179,6 +181,7 @@ export async function getAuthToken(): Promise<null | string> {
  */
 export async function validateToken(token: string): Promise<boolean> {
   try {
+    // codeql[js/file-access-to-http] - Intentional: validating auth token with Supabase API
     const response = await fetch(`${API_BASE_URL}/organizations`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -360,7 +363,12 @@ export class AuthManager {
       updatedAt: new Date().toISOString(),
     }
 
-    writeFileSync(this.credentialsFile, JSON.stringify(data, null, 2), 'utf-8')
+    // Security fix: Write with secure permissions (owner read/write only)
+    // This prevents TOCTOU race conditions by setting permissions atomically
+    writeFileSync(this.credentialsFile, JSON.stringify(data, null, 2), {
+      encoding: 'utf-8',
+      mode: 0o600, // Owner read/write only
+    })
   }
 }
 

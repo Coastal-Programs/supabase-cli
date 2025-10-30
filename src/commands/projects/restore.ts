@@ -1,16 +1,19 @@
 import { Args, Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
-import {
-  AutomationFlags,
-  ConfirmationFlags,
-  OutputFormatFlags,
-} from '../../base-flags'
+import { AutomationFlags, ConfirmationFlags, OutputFormatFlags } from '../../base-flags'
 import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
 import { getProject, restoreProject } from '../../supabase'
 
 export default class ProjectsRestore extends BaseCommand {
   static aliases = ['projects:resume', 'proj:restore']
+
+  static args = {
+    ref: Args.string({
+      description: 'Project reference ID to restore',
+      required: false,
+    }),
+  }
 
   static description = 'restore a paused Supabase project'
 
@@ -19,13 +22,6 @@ export default class ProjectsRestore extends BaseCommand {
     '<%= config.bin %> <%= command.id %> --project my-project-ref --yes',
     '<%= config.bin %> <%= command.id %> -p my-project-ref --quiet',
   ]
-
-  static args = {
-    ref: Args.string({
-      description: 'Project reference ID to restore',
-      required: false,
-    }),
-  }
 
   static flags = {
     ...BaseCommand.baseFlags,

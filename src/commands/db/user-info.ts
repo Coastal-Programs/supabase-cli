@@ -3,13 +3,13 @@ import chalk from 'chalk'
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { queryDatabase } from '../../supabase'
-import { SQL_QUERIES } from '../../utils/sql-queries'
 import { formatter } from '../../utils/formatters'
+import { SQL_QUERIES } from '../../utils/sql-queries'
 
 interface UserInfoResult {
   can_create_db: boolean
   is_superuser: boolean
-  password_expires: string | null
+  password_expires: null | string
   username: string
 }
 
@@ -37,7 +37,7 @@ export default class DbUserInfo extends BaseCommand {
 
     try {
       // Get project reference
-      const projectRef = (flags.project || flags['project-ref']) || process.env.SUPABASE_PROJECT_REF
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
         this.error(
@@ -59,17 +59,17 @@ export default class DbUserInfo extends BaseCommand {
       }
 
       if (users.length === 0) {
-        if (!flags.quiet) {
-          this.info('No users found')
-        } else {
+        if (flags.quiet) {
           this.output([])
+        } else {
+          this.info('No users found')
         }
       } else {
         if (flags.format === 'table' && !flags.json) {
           // Enhanced table format with formatting
           const table = formatter.createTable(
             ['Username', 'Can Create DB', 'Is Superuser', 'Password Expires'],
-            users.map(user => [
+            users.map((user) => [
               formatter.formatOwner(user.username),
               formatter.formatStatus(user.can_create_db),
               formatter.formatStatus(user.is_superuser),
@@ -86,8 +86,8 @@ export default class DbUserInfo extends BaseCommand {
           this.info(`Total: ${users.length} user(s)`)
 
           // Show summary statistics
-          const superusers = users.filter(u => u.is_superuser).length
-          const canCreateDb = users.filter(u => u.can_create_db).length
+          const superusers = users.filter((u) => u.is_superuser).length
+          const canCreateDb = users.filter((u) => u.can_create_db).length
           this.info(`Superusers: ${superusers}, Can Create DB: ${canCreateDb}`)
         }
       }

@@ -3,8 +3,8 @@ import chalk from 'chalk'
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { queryDatabase } from '../../supabase'
-import { SQL_QUERIES } from '../../utils/sql-queries'
 import { formatter } from '../../utils/formatters'
+import { SQL_QUERIES } from '../../utils/sql-queries'
 
 interface ConnectionResult {
   connections: number
@@ -35,7 +35,7 @@ export default class DbConnections extends BaseCommand {
 
     try {
       // Get project reference
-      const projectRef = (flags.project || flags['project-ref']) || process.env.SUPABASE_PROJECT_REF
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
         this.error(
@@ -47,7 +47,8 @@ export default class DbConnections extends BaseCommand {
       // Fetch active connections using SQL query
       const connections = await this.spinner(
         'Fetching active connections...',
-        async () => queryDatabase(projectRef, SQL_QUERIES.activeConnections) as Promise<ConnectionResult[]>,
+        async () =>
+          queryDatabase(projectRef, SQL_QUERIES.activeConnections) as Promise<ConnectionResult[]>,
         'Connections fetched successfully',
       )
 
@@ -57,17 +58,17 @@ export default class DbConnections extends BaseCommand {
       }
 
       if (connections.length === 0) {
-        if (!flags.quiet) {
-          this.info('No active connections found')
-        } else {
+        if (flags.quiet) {
           this.output([])
+        } else {
+          this.info('No active connections found')
         }
       } else {
         if (flags.format === 'table' && !flags.json) {
           // Enhanced table format with formatting
           const table = formatter.createTable(
             ['Database', 'Active Connections'],
-            connections.map(conn => [
+            connections.map((conn) => [
               chalk.bold(conn.database),
               formatter.formatCount(conn.connections, 50),
             ]),
@@ -80,11 +81,15 @@ export default class DbConnections extends BaseCommand {
         if (!flags.quiet) {
           this.divider()
           const totalConnections = connections.reduce((sum, conn) => sum + conn.connections, 0)
-          this.info(`Total: ${totalConnections} active connection(s) across ${connections.length} database(s)`)
+          this.info(
+            `Total: ${totalConnections} active connection(s) across ${connections.length} database(s)`,
+          )
 
           // Warning if connection count is high
           if (totalConnections > 100) {
-            this.warning('High connection count detected. Consider connection pooling optimization.')
+            this.warning(
+              'High connection count detected. Consider connection pooling optimization.',
+            )
           }
         }
       }

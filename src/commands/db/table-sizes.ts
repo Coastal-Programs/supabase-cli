@@ -1,11 +1,11 @@
-import chalk from 'chalk'
 import { Flags } from '@oclif/core'
+import chalk from 'chalk'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { queryDatabase } from '../../supabase'
-import { SQL_QUERIES } from '../../utils/sql-queries'
 import { formatter } from '../../utils/formatters'
+import { SQL_QUERIES } from '../../utils/sql-queries'
 
 interface TableSizeResult {
   schemaname: string
@@ -48,7 +48,7 @@ export default class DbTableSizes extends BaseCommand {
 
     try {
       // Get project reference
-      const projectRef = (flags.project || flags['project-ref']) || process.env.SUPABASE_PROJECT_REF
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
         this.error(
@@ -66,7 +66,7 @@ export default class DbTableSizes extends BaseCommand {
 
       // Filter by schema if specified
       if (flags.schema) {
-        tableSizes = tableSizes.filter(table => table.schemaname === flags.schema)
+        tableSizes = tableSizes.filter((table) => table.schemaname === flags.schema)
       }
 
       // Apply limit
@@ -83,20 +83,20 @@ export default class DbTableSizes extends BaseCommand {
       }
 
       if (tableSizes.length === 0) {
-        if (!flags.quiet) {
+        if (flags.quiet) {
+          this.output([])
+        } else {
           const message = flags.schema
             ? `No tables found in schema '${flags.schema}'`
             : 'No tables found'
           this.info(message)
-        } else {
-          this.output([])
         }
       } else {
         if (flags.format === 'table' && !flags.json) {
           // Enhanced table format with formatting
           const table = formatter.createTable(
             ['Schema', 'Table', 'Size'],
-            tableSizes.map(table => [
+            tableSizes.map((table) => [
               table.schemaname,
               chalk.bold(table.tablename),
               formatter.formatSize(table.size),

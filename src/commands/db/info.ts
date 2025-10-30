@@ -1,9 +1,9 @@
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { ErrorMessages } from '../../error-messages'
+import { queryDatabase } from '../../supabase'
 import { formatter } from '../../utils/formatters'
 import { SQL_QUERIES } from '../../utils/sql-queries'
-import { queryDatabase } from '../../supabase'
 
 interface DatabaseInfo {
   database: string
@@ -61,7 +61,7 @@ export default class DbInfo extends BaseCommand {
       if (flags.format === 'table' && !flags.json) {
         // Enhanced table format with formatting
         const table = formatter.createKeyValueTable({
-          'Database': info.database,
+          Database: info.database,
           'Database Size': formatter.formatSize(info.size),
           'PostgreSQL Version': formatter.formatVersion(info.postgres_version),
         })

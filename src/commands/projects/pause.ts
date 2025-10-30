@@ -1,5 +1,10 @@
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, ConfirmationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
+import {
+  AutomationFlags,
+  ConfirmationFlags,
+  OutputFormatFlags,
+  ProjectFlags,
+} from '../../base-flags'
 import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
 import { getProject, pauseProject } from '../../supabase'
 
@@ -50,10 +55,7 @@ export default class ProjectsPause extends BaseCommand {
 
       // Confirm pause
       if (!flags.yes && !flags.force && !flags['no-interactive']) {
-        const confirmed = await this.confirm(
-          ErrorMessages.CONFIRM_PAUSE(project.name),
-          false,
-        )
+        const confirmed = await this.confirm(ErrorMessages.CONFIRM_PAUSE(project.name), false)
 
         if (!confirmed) {
           this.warning(WarningMessages.OPERATION_CANCELLED())
@@ -72,7 +74,9 @@ export default class ProjectsPause extends BaseCommand {
       if (!flags.quiet) {
         this.divider()
         this.success(SuccessMessages.PROJECT_PAUSED(project.name))
-        this.info(`To restore the project, use: supabase-cli projects:restore --project ${projectRef}`)
+        this.info(
+          `To restore the project, use: supabase-cli projects:restore --project ${projectRef}`,
+        )
       }
 
       process.exit(0)

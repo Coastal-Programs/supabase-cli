@@ -3,8 +3,8 @@ import chalk from 'chalk'
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { queryDatabase } from '../../supabase'
-import { SQL_QUERIES } from '../../utils/sql-queries'
 import { formatter } from '../../utils/formatters'
+import { SQL_QUERIES } from '../../utils/sql-queries'
 
 interface SchemaResult {
   schema_name: string
@@ -35,7 +35,7 @@ export default class DbSchemas extends BaseCommand {
 
     try {
       // Get project reference
-      const projectRef = (flags.project || flags['project-ref']) || process.env.SUPABASE_PROJECT_REF
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
         this.error(
@@ -57,17 +57,17 @@ export default class DbSchemas extends BaseCommand {
       }
 
       if (schemas.length === 0) {
-        if (!flags.quiet) {
-          this.info('No schemas found')
-        } else {
+        if (flags.quiet) {
           this.output([])
+        } else {
+          this.info('No schemas found')
         }
       } else {
         if (flags.format === 'table' && !flags.json) {
           // Enhanced table format with formatting
           const table = formatter.createTable(
             ['Schema Name', 'Owner'],
-            schemas.map(schema => [
+            schemas.map((schema) => [
               chalk.bold(schema.schema_name),
               formatter.formatOwner(schema.schema_owner),
             ]),

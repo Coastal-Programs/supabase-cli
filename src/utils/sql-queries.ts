@@ -61,6 +61,17 @@ export const SQL_QUERIES = {
     ORDER BY schema_name;
   `,
 
+  // Tables
+  listTables: `
+    SELECT
+      table_schema,
+      table_name,
+      table_type
+    FROM information_schema.tables
+    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY table_schema, table_name;
+  `,
+
   // Table sizes
   tableSizes: `
     SELECT
@@ -71,17 +82,6 @@ export const SQL_QUERIES = {
     FROM pg_tables
     WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
     ORDER BY size_bytes DESC;
-  `,
-
-  // Tables
-  listTables: `
-    SELECT
-      table_schema,
-      table_name,
-      table_type
-    FROM information_schema.tables
-    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
-    ORDER BY table_schema, table_name;
   `,
 
   // User info

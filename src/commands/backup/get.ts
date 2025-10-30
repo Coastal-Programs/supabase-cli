@@ -63,6 +63,7 @@ export default class BackupGet extends BaseCommand {
         if (backup.created_at) {
           this.info(`Created: ${backup.created_at}`)
         }
+
         if (backup.expires_at) {
           this.info(`Expires: ${backup.expires_at}`)
         }

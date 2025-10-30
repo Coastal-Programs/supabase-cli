@@ -60,7 +60,9 @@ export default class ProjectsList extends BaseCommand {
         this.divider()
         this.info(InfoMessages.RESULTS_COUNT(projects.length, 'project'))
         if (allProjects.length > projects.length) {
-          this.info(`Showing ${offset + 1}-${offset + projects.length} of ${allProjects.length} total`)
+          this.info(
+            `Showing ${offset + 1}-${offset + projects.length} of ${allProjects.length} total`,
+          )
         }
       }
 

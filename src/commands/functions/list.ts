@@ -67,7 +67,9 @@ export default class FunctionsList extends BaseCommand {
         this.divider()
         this.info(InfoMessages.RESULTS_COUNT(functions.length, 'function'))
         if (allFunctions.length > functions.length) {
-          this.info(`Showing ${offset + 1}-${offset + functions.length} of ${allFunctions.length} total`)
+          this.info(
+            `Showing ${offset + 1}-${offset + functions.length} of ${allFunctions.length} total`,
+          )
         }
       }
 

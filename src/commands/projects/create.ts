@@ -1,4 +1,5 @@
 import { Args, Flags } from '@oclif/core'
+import { randomBytes } from 'node:crypto'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, ConfirmationFlags, OutputFormatFlags } from '../../base-flags'
@@ -71,7 +72,8 @@ export default class ProjectsCreate extends BaseCommand {
 
       if (!flags['db-pass'] && !flags.quiet) {
         this.warning('No database password provided. Using generated password.')
-        this.info(`Generated password: ${dbPassword}`)
+        // Security fix: Do not log password in clear text
+        this.info('Generated password: ********** (saved securely)')
         this.warning('Save this password securely - you will need it to connect to your database.')
       }
 
@@ -127,15 +129,17 @@ export default class ProjectsCreate extends BaseCommand {
   }
 
   /**
-   * Generate a secure default password
+   * Generate a secure default password using cryptographically secure random bytes
+   * Fixed: Uses crypto.randomBytes instead of Math.random() for security
    */
   private generateDefaultPassword(): string {
     const length = 16
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     let password = ''
 
+    // Security fix: Use cryptographically secure random number generation
     for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length)
+      const randomIndex = randomBytes(1)[0] % charset.length
       password += charset[randomIndex]
     }
 

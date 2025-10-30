@@ -1,9 +1,14 @@
 import { Args, Flags } from '@oclif/core'
 
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags, ConfirmationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
-import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
+import {
+  AutomationFlags,
+  ConfirmationFlags,
+  OutputFormatFlags,
+  ProjectFlags,
+} from '../../base-flags'
 import { cache } from '../../cache'
+import { ErrorMessages, SuccessMessages, WarningMessages } from '../../error-messages'
 import { type DeployFunctionConfig, deployFunction } from '../../supabase'
 
 export default class FunctionsDeploy extends BaseCommand {

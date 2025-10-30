@@ -73,9 +73,9 @@ export class GoTrueAPI {
       const key = this.anonKey
       const response = await fetch(`${this.baseUrl}/settings`, {
         headers: {
-          apikey: key,
           Authorization: `Bearer ${key}`,
           'Content-Type': 'application/json',
+          apikey: key,
         },
         method: 'GET',
       })

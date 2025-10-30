@@ -12,6 +12,12 @@
 
 export const Validator = {
   isValidEmail(email: string): boolean {
+    // Security fix: Prevent ReDoS by limiting input length before regex test
+    // RFC 5321 specifies max email length of 320 characters
+    if (!email || email.length > 320) {
+      return false
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   },

@@ -69,7 +69,7 @@ export default class FunctionsInvoke extends BaseCommand {
       if (flags.body) {
         try {
           body = JSON.parse(flags.body)
-        } catch (error) {
+        } catch {
           throw new SupabaseError(
             ErrorMessages.INVALID_JSON(flags.body),
             SupabaseErrorCode.INVALID_INPUT,
@@ -102,7 +102,7 @@ export default class FunctionsInvoke extends BaseCommand {
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               throw new SupabaseError(
-                ErrorMessages.TIMEOUT(`Function invocation`, flags.timeout),
+                ErrorMessages.TIMEOUT('Function invocation', flags.timeout),
                 SupabaseErrorCode.TIMEOUT,
                 408,
               )

@@ -1,21 +1,21 @@
-import chalk from 'chalk'
 import { Flags } from '@oclif/core'
+import chalk from 'chalk'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../base-flags'
 import { queryDatabase } from '../../supabase'
-import { SQL_QUERIES } from '../../utils/sql-queries'
 import { formatter } from '../../utils/formatters'
+import { SQL_QUERIES } from '../../utils/sql-queries'
 
 interface PolicyResult {
   cmd: string
-  policyname: string
   permissive: string
-  qual: string | null
+  policyname: string
+  qual: null | string
   roles: string
   schemaname: string
   tablename: string
-  with_check: string | null
+  with_check: null | string
 }
 
 export default class DbPolicies extends BaseCommand {
@@ -51,7 +51,7 @@ export default class DbPolicies extends BaseCommand {
 
     try {
       // Get project reference
-      const projectRef = (flags.project || flags['project-ref']) || process.env.SUPABASE_PROJECT_REF
+      const projectRef = flags.project || flags['project-ref'] || process.env.SUPABASE_PROJECT_REF
 
       if (!projectRef) {
         this.error(
@@ -69,12 +69,12 @@ export default class DbPolicies extends BaseCommand {
 
       // Filter by schema if specified
       if (flags.schema) {
-        policies = policies.filter(policy => policy.schemaname === flags.schema)
+        policies = policies.filter((policy) => policy.schemaname === flags.schema)
       }
 
       // Filter by table if specified
       if (flags.table) {
-        policies = policies.filter(policy => policy.tablename === flags.table)
+        policies = policies.filter((policy) => policy.tablename === flags.table)
       }
 
       // Output results
@@ -86,20 +86,21 @@ export default class DbPolicies extends BaseCommand {
       }
 
       if (policies.length === 0) {
-        if (!flags.quiet) {
-          const message = flags.schema || flags.table
-            ? 'No policies found matching filters'
-            : 'No RLS policies found'
-          this.info(message)
-        } else {
+        if (flags.quiet) {
           this.output([])
+        } else {
+          const message =
+            flags.schema || flags.table
+              ? 'No policies found matching filters'
+              : 'No RLS policies found'
+          this.info(message)
         }
       } else {
         if (flags.format === 'table' && !flags.json) {
           // Enhanced table format with formatting
           const table = formatter.createTable(
             ['Schema', 'Table', 'Policy Name', 'Command', 'Type', 'Roles'],
-            policies.map(policy => [
+            policies.map((policy) => [
               policy.schemaname,
               policy.tablename,
               chalk.bold(policy.policyname),
@@ -118,8 +119,8 @@ export default class DbPolicies extends BaseCommand {
           this.info(`Total: ${policies.length} policy(ies)`)
 
           // Show summary statistics
-          const schemaCount = new Set(policies.map(p => p.schemaname)).size
-          const tableCount = new Set(policies.map(p => `${p.schemaname}.${p.tablename}`)).size
+          const schemaCount = new Set(policies.map((p) => p.schemaname)).size
+          const tableCount = new Set(policies.map((p) => `${p.schemaname}.${p.tablename}`)).size
           this.info(`Covering ${tableCount} table(s) across ${schemaCount} schema(s)`)
         }
       }
