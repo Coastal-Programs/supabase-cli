@@ -41,26 +41,69 @@ export default class ConfigInit extends BaseCommand {
 
       // Step 1: Check for existing token
       const existingToken = await getAuthToken()
-      const token = flags.token || existingToken
+      let token = flags.token || existingToken
 
       if (!token) {
-        // No token found - provide instructions
-        this.error(
-          'No authentication token found.\n\n' +
-            'To get started:\n' +
-            '1. Visit https://supabase.com/dashboard/account/tokens\n' +
-            '2. Generate a new Personal Access Token\n' +
-            '3. Set it using one of these methods:\n\n' +
-            '   Option A: Pass directly to this command\n' +
-            '   $ supabase-cli init --token sbp_your_token_here\n\n' +
-            '   Option B: Set environment variable\n' +
-            '   $ export SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
-            '   $ supabase-cli init\n\n' +
-            '   Option C (Windows PowerShell):\n' +
-            '   $ $env:SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
-            '   $ supabase-cli init',
-          { exit: 1 },
-        )
+        // No token found - prompt interactively (unless in non-interactive mode)
+        if (flags['no-interactive']) {
+          this.error(
+            'No authentication token found.\n\n' +
+              'To get started:\n' +
+              '1. Visit https://supabase.com/dashboard/account/tokens\n' +
+              '2. Generate a new Personal Access Token\n' +
+              '3. Set it using one of these methods:\n\n' +
+              '   Option A: Pass directly to this command\n' +
+              '   $ supabase-cli init --token sbp_your_token_here\n\n' +
+              '   Option B: Set environment variable\n' +
+              '   $ export SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
+              '   $ supabase-cli init\n\n' +
+              '   Option C (Windows PowerShell):\n' +
+              '   $ $env:SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
+              '   $ supabase-cli init',
+            { exit: 1 },
+          )
+        }
+
+        // Show interactive instructions
+        this.info('No authentication token found.')
+        this.info('')
+        this.info('To get your Supabase access token:')
+        this.info('1. Visit: https://supabase.com/dashboard/account/tokens')
+        this.info('2. Click "Generate New Token"')
+        this.info('3. Copy the token (starts with sbp_)')
+        this.info('')
+
+        // Prompt for token
+        const inquirer = await import('inquirer')
+        const answers = await inquirer.default.prompt([
+          {
+            message: 'Enter your Supabase access token:',
+            name: 'token',
+            type: 'password',
+            validate: (input: string) => {
+              if (!input || input.trim().length === 0) {
+                return 'Token cannot be empty'
+              }
+
+              if (!input.startsWith('sbp_')) {
+                return 'Invalid token format. Token should start with "sbp_"'
+              }
+
+              if (input.length < 36) {
+                return 'Token appears to be too short. Please check and try again.'
+              }
+
+              return true
+            },
+          },
+        ])
+
+        token = answers.token
+      }
+
+      // Ensure we have a token at this point
+      if (!token) {
+        this.error('No token provided', { exit: 1 })
       }
 
       // Step 2: Validate token format
@@ -71,7 +114,7 @@ export default class ConfigInit extends BaseCommand {
       // Step 3: Validate token works
       const isValid = await this.spinner(
         'Validating credentials...',
-        async () => validateToken(token!),
+        async () => validateToken(token),
         'Credentials validated',
       )
 
@@ -130,7 +173,7 @@ export default class ConfigInit extends BaseCommand {
           profile: flags.profile,
           projects: projectCount,
           status: 'READY',
-          token: `${token.slice(0, 10)}...${token.slice(-4)}`,
+          token: token ? `${token.slice(0, 10)}...${token.slice(-4)}` : 'Not set',
         }
 
         this.output(summary)
