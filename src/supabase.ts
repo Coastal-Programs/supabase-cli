@@ -670,10 +670,19 @@ export async function restoreProject(ref: string): Promise<void> {
 
 /**
  * Execute a SQL query against the database
+ *
+ * CRITICAL FIX: The Management API returns an array of objects directly,
+ * not wrapped in { rows: [] }. Response format:
+ * [
+ *   { "column1": "value1", "column2": "value2" },
+ *   { "column1": "value3", "column2": "value4" }
+ * ]
+ *
+ * See: docs/testing/api-test-report.md line 145-150
  */
 export async function queryDatabase(ref: string, sql: string): Promise<unknown[]> {
   const headers = await getAuthHeader()
-  const response = await enhancedFetch<{ rows: unknown[] }>(
+  const result = await enhancedFetch<unknown[]>(
     `${API_BASE_URL}/projects/${ref}/database/query`,
     {
       body: JSON.stringify({ query: sql }),
@@ -686,7 +695,9 @@ export async function queryDatabase(ref: string, sql: string): Promise<unknown[]
     'query database',
   )
 
-  return response.rows || []
+  // API returns array directly, not wrapped in { rows: [] }
+  // If result is not an array, return empty array
+  return Array.isArray(result) ? result : []
 }
 
 /**
@@ -735,14 +746,27 @@ export async function listExtensions(ref: string): Promise<Extension[]> {
     'extensions',
     ref,
     async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Extension[]>(`${API_BASE_URL}/projects/${ref}/database/extensions`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
+      // Query PostgreSQL system catalogs directly since Management API doesn't have extensions endpoint
+      const sql = `
+        SELECT
+          pae.name,
+          pae.default_version,
+          COALESCE(pe.extversion, NULL) as installed_version,
+          pae.comment
+        FROM pg_available_extensions pae
+        LEFT JOIN pg_extension pe ON pe.extname = pae.name
+        ORDER BY pae.name;
+      `
+
+      const rows = await queryDatabase(ref, sql)
+
+      // Transform rows to Extension type
+      return rows.map((row: any) => ({
+        name: row.name,
+        default_version: row.default_version,
+        installed_version: row.installed_version,
+        comment: row.comment,
+      }))
     },
     CACHE_TTL.EXTENSION,
   )

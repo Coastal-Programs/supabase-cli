@@ -33,20 +33,20 @@ export const Platform = {
   get displayName(): string {
     switch (platform()) {
       case 'win32': {
-      return 'Windows'
-    }
+        return 'Windows'
+      }
 
       case 'darwin': {
-      return 'macOS'
-    }
+        return 'macOS'
+      }
 
       case 'linux': {
-      return 'Linux'
-    }
+        return 'Linux'
+      }
 
       default: {
-      return platform()
-    }
+        return platform()
+      }
     }
   },
 

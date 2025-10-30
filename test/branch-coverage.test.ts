@@ -242,11 +242,7 @@ describe('Branch Coverage Tests', () => {
   describe('errors.ts - Branch Coverage', () => {
     describe('Error Classification', () => {
       it('should identify retryable errors (lines 82-83)', () => {
-        const retryableError = new SupabaseError(
-          'Rate limited',
-          SupabaseErrorCode.RATE_LIMIT,
-          429,
-        )
+        const retryableError = new SupabaseError('Rate limited', SupabaseErrorCode.RATE_LIMIT, 429)
         expect(retryableError.isRetryable()).to.be.true
       })
 
@@ -281,11 +277,7 @@ describe('Branch Coverage Tests', () => {
       })
 
       it('should classify 504 errors as retryable', () => {
-        const gatewayTimeout = new SupabaseError(
-          'Gateway timeout',
-          SupabaseErrorCode.TIMEOUT,
-          504,
-        )
+        const gatewayTimeout = new SupabaseError('Gateway timeout', SupabaseErrorCode.TIMEOUT, 504)
         expect(gatewayTimeout.isRetryable()).to.be.true
       })
 
@@ -295,11 +287,7 @@ describe('Branch Coverage Tests', () => {
       })
 
       it('should handle network errors (line 121)', () => {
-        const networkError = new SupabaseError(
-          'Network error',
-          SupabaseErrorCode.NETWORK_ERROR,
-          0,
-        )
+        const networkError = new SupabaseError('Network error', SupabaseErrorCode.NETWORK_ERROR, 0)
         expect(networkError.isRetryable()).to.be.true
       })
     })

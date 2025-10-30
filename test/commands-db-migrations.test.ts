@@ -72,7 +72,10 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
           }),
         )
 
-        const results = await supabaseModule.queryDatabase('test-ref', 'SELECT * FROM nonexistent WHERE false')
+        const results = await supabaseModule.queryDatabase(
+          'test-ref',
+          'SELECT * FROM nonexistent WHERE false',
+        )
 
         expect(results).to.be.an('array').that.is.empty
       })
@@ -181,9 +184,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 429 rate limited', async () => {
-        fetchStub.resolves(
-          new Response('Rate limit exceeded', { status: 429 }),
-        )
+        fetchStub.resolves(new Response('Rate limit exceeded', { status: 429 }))
 
         try {
           await supabaseModule.queryDatabase('test-ref', 'SELECT 1')
@@ -195,9 +196,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 500 server error', async () => {
-        fetchStub.resolves(
-          new Response('Internal Server Error', { status: 500 }),
-        )
+        fetchStub.resolves(new Response('Internal Server Error', { status: 500 }))
 
         try {
           await supabaseModule.queryDatabase('test-ref', 'SELECT 1')
@@ -241,7 +240,10 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
           }),
         )
 
-        const results = await supabaseModule.queryDatabase('test-ref', 'SELECT id, NULL as value FROM test')
+        const results = await supabaseModule.queryDatabase(
+          'test-ref',
+          'SELECT id, NULL as value FROM test',
+        )
 
         expect(results).to.have.lengthOf(1)
         expect((results[0] as any).value).to.be.null
@@ -347,9 +349,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
 
     describe('Error Handling Tests', () => {
       it('should handle 404 when table does not exist', async () => {
-        fetchStub.resolves(
-          new Response('Table not found', { status: 404 }),
-        )
+        fetchStub.resolves(new Response('Table not found', { status: 404 }))
 
         try {
           await supabaseModule.getTableSchema('test-ref', 'nonexistent_table')
@@ -373,9 +373,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 500 server error', async () => {
-        fetchStub.resolves(
-          new Response('Internal Server Error', { status: 500 }),
-        )
+        fetchStub.resolves(new Response('Internal Server Error', { status: 500 }))
 
         try {
           await supabaseModule.getTableSchema('test-ref', 'users')
@@ -510,7 +508,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
 
       it('should use correct API endpoint', async () => {
         fetchStub.resolves(
-          new Response(JSON.stringify([]), {
+          new Response(JSON.stringify({ rows: [] }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           }),
@@ -519,8 +517,8 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
         await supabaseModule.listExtensions('my-project')
 
         const call = fetchStub.firstCall
-        expect(call.args[0]).to.include('/projects/my-project/database/extensions')
-        expect(call.args[1].method).to.equal('GET')
+        expect(call.args[0]).to.include('/projects/my-project/database/query')
+        expect(call.args[1].method).to.equal('POST')
       })
     })
 
@@ -530,8 +528,19 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
           { name: 'uuid-ossp', default_version: '1.1', installed_version: '1.1', comment: 'UUIDs' },
         ]
 
+        const mockQueryResponse = {
+          rows: [
+            {
+              name: 'uuid-ossp',
+              default_version: '1.1',
+              installed_version: '1.1',
+              comment: 'UUIDs',
+            },
+          ],
+        }
+
         fetchStub.resolves(
-          new Response(JSON.stringify(mockExtensions), {
+          new Response(JSON.stringify(mockQueryResponse), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           }),
@@ -576,9 +585,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 500 server error', async () => {
-        fetchStub.resolves(
-          new Response('Internal Server Error', { status: 500 }),
-        )
+        fetchStub.resolves(new Response('Internal Server Error', { status: 500 }))
 
         try {
           await supabaseModule.listExtensions('test-ref')
@@ -778,9 +785,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 500 server error', async () => {
-        fetchStub.resolves(
-          new Response('Internal Server Error', { status: 500 }),
-        )
+        fetchStub.resolves(new Response('Internal Server Error', { status: 500 }))
 
         try {
           await supabaseModule.listMigrations('test-ref')
@@ -857,12 +862,21 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       it('should use correct API endpoint and method', async () => {
         fetchStub.resolves(
           new Response(
-            JSON.stringify({ version: '1', name: 'test', statements: [], applied_at: '2024-01-01' }),
+            JSON.stringify({
+              version: '1',
+              name: 'test',
+              statements: [],
+              applied_at: '2024-01-01',
+            }),
             { status: 201, headers: { 'Content-Type': 'application/json' } },
           ),
         )
 
-        await supabaseModule.applyMigration('my-project', 'my_migration', 'CREATE TABLE test (id UUID)')
+        await supabaseModule.applyMigration(
+          'my-project',
+          'my_migration',
+          'CREATE TABLE test (id UUID)',
+        )
 
         const call = fetchStub.firstCall
         expect(call.args[0]).to.include('/projects/my-project/database/migrations')
@@ -872,7 +886,12 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       it('should include name and SQL in request body', async () => {
         fetchStub.resolves(
           new Response(
-            JSON.stringify({ version: '1', name: 'test', statements: [], applied_at: '2024-01-01' }),
+            JSON.stringify({
+              version: '1',
+              name: 'test',
+              statements: [],
+              applied_at: '2024-01-01',
+            }),
             { status: 201, headers: { 'Content-Type': 'application/json' } },
           ),
         )
@@ -891,7 +910,12 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       it('should invalidate migrations cache after applying', async () => {
         fetchStub.resolves(
           new Response(
-            JSON.stringify({ version: '1', name: 'test', statements: [], applied_at: '2024-01-01' }),
+            JSON.stringify({
+              version: '1',
+              name: 'test',
+              statements: [],
+              applied_at: '2024-01-01',
+            }),
             { status: 201, headers: { 'Content-Type': 'application/json' } },
           ),
         )
@@ -905,12 +929,21 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       it('should invalidate tables cache after applying migration', async () => {
         fetchStub.resolves(
           new Response(
-            JSON.stringify({ version: '1', name: 'test', statements: [], applied_at: '2024-01-01' }),
+            JSON.stringify({
+              version: '1',
+              name: 'test',
+              statements: [],
+              applied_at: '2024-01-01',
+            }),
             { status: 201, headers: { 'Content-Type': 'application/json' } },
           ),
         )
 
-        await supabaseModule.applyMigration('test-ref', 'create_table', 'CREATE TABLE new_table (id UUID)')
+        await supabaseModule.applyMigration(
+          'test-ref',
+          'create_table',
+          'CREATE TABLE new_table (id UUID)',
+        )
 
         // Cache invalidation for both migrations and tables should be called
         expect(cacheDeleteStub.called).to.be.true
@@ -963,9 +996,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 429 rate limited', async () => {
-        fetchStub.resolves(
-          new Response('Rate limit exceeded', { status: 429 }),
-        )
+        fetchStub.resolves(new Response('Rate limit exceeded', { status: 429 }))
 
         try {
           await supabaseModule.applyMigration('test-ref', 'test', 'SELECT 1')
@@ -977,9 +1008,7 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
       })
 
       it('should handle 500 server error', async () => {
-        fetchStub.resolves(
-          new Response('Internal Server Error', { status: 500 }),
-        )
+        fetchStub.resolves(new Response('Internal Server Error', { status: 500 }))
 
         try {
           await supabaseModule.applyMigration('test-ref', 'test', 'SELECT 1')
@@ -1070,7 +1099,11 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
           ),
         )
 
-        const result = await supabaseModule.applyMigration('test-ref', 'add_verified', transactionalSQL)
+        const result = await supabaseModule.applyMigration(
+          'test-ref',
+          'add_verified',
+          transactionalSQL,
+        )
 
         expect(result.name).to.equal('add_verified')
       })
@@ -1093,12 +1126,14 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
         )
 
         // Then get schema
-        fetchStub.onCall(1).resolves(
-          new Response(
-            JSON.stringify({ name: 'users', columns: [{ name: 'id', data_type: 'uuid' }] }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } },
-          ),
-        )
+        fetchStub
+          .onCall(1)
+          .resolves(
+            new Response(
+              JSON.stringify({ name: 'users', columns: [{ name: 'id', data_type: 'uuid' }] }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          )
 
         const exists = await supabaseModule.queryDatabase(
           'test-ref',
@@ -1132,7 +1167,12 @@ describe('Database and Migration Commands (commands-db-migrations.test.ts)', () 
           new Response(
             JSON.stringify([
               { version: '005', name: 'old', statements: [], applied_at: '2024-01-05' },
-              { version: '006', name: 'test_migration', statements: ['SELECT 1'], applied_at: '2024-01-06' },
+              {
+                version: '006',
+                name: 'test_migration',
+                statements: ['SELECT 1'],
+                applied_at: '2024-01-06',
+              },
             ]),
             { status: 200, headers: { 'Content-Type': 'application/json' } },
           ),

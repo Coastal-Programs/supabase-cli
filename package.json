@@ -81,7 +81,7 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chai": "^4.3.10",
-    "eslint": "^9.38.0",
+    "eslint": "^8.57.1",
     "eslint-config-oclif": "^5.0.0",
     "eslint-config-oclif-typescript": "^3.0.8",
     "eslint-config-prettier": "^10.1.8",

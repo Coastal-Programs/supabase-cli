@@ -213,8 +213,8 @@ describe('OutputFormatter', () => {
   describe('createKeyValueTable', () => {
     it('should create a key-value table', () => {
       const table = formatter.createKeyValueTable({
-        'Database': 'postgres',
-        'Size': '1.5 GB',
+        Database: 'postgres',
+        Size: '1.5 GB',
       })
       expect(table).to.be.a('string')
       expect(table.length).to.be.greaterThan(0)

@@ -112,7 +112,7 @@ export default class ConfigInit extends BaseCommand {
             message: 'Enter your Supabase access token:',
             name: 'token',
             type: 'password',
-            validate: (input: string) => {
+            validate(input: string) {
               if (!input || input.trim().length === 0) {
                 return 'Token cannot be empty'
               }

@@ -104,24 +104,24 @@ export const Helper = {
 
     switch (format) {
       case 'json': {
-      return pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data)
-    }
+        return pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data)
+      }
 
       case 'table': {
-      return Helper.formatTable(data)
-    }
+        return Helper.formatTable(data)
+      }
 
       case 'list': {
-      return Helper.formatList(data)
-    }
+        return Helper.formatList(data)
+      }
 
       case 'yaml': {
-      return Helper.formatYaml(data)
-    }
+        return Helper.formatYaml(data)
+      }
 
       default: {
-      return String(data)
-    }
+        return String(data)
+      }
     }
   },
 

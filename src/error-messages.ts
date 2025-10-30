@@ -236,6 +236,8 @@ export const SuccessMessages = {
 
   CONFIGURATION_SAVED: () => 'Configuration saved successfully',
 
+  DELETED: (type: string, id: string) => `${type} '${id}' deleted successfully`,
+
   FUNCTION_DEPLOYED: (name: string) => `Function '${name}' deployed successfully`,
 
   FUNCTION_INVOKED: (name: string) => `Function '${name}' invoked successfully`,
@@ -267,6 +269,10 @@ export const SuccessMessages = {
 export const InfoMessages = {
   CHECKING_STATUS: (resource: string) => `Checking ${resource} status...`,
 
+  CREATED: (type: string, id: string) => `${type} '${id}' created successfully`,
+
+  DELETED: (type: string, id: string) => `${type} '${id}' deleted successfully`,
+
   FETCHING_DATA: (resource: string) => `Fetching ${resource}...`,
 
   NO_RESULTS: (type: string) => `No ${type} found`,
@@ -292,6 +298,11 @@ export const WarningMessages = {
 
   DEPRECATED: (feature: string, alternative: string) =>
     `${feature} is deprecated. Use ${alternative} instead.`,
+
+  DESTRUCTIVE_OPERATION: (operation?: string) =>
+    operation
+      ? `WARNING: ${operation} is a destructive operation that cannot be undone.`
+      : 'WARNING: This is a destructive operation that cannot be undone.',
 
   NO_DATA: (resource: string) => `No ${resource} data available`,
 

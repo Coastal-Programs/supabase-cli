@@ -26,28 +26,28 @@ export const Parser = {
 
     switch (unit) {
       case 'B': {
-      return value
-    }
+        return value
+      }
 
       case 'KB': {
-      return value * 1024
-    }
+        return value * 1024
+      }
 
       case 'MB': {
-      return value * 1024 * 1024
-    }
+        return value * 1024 * 1024
+      }
 
       case 'GB': {
-      return value * 1024 * 1024 * 1024
-    }
+        return value * 1024 * 1024 * 1024
+      }
 
       case 'TB': {
-      return value * 1024 * 1024 * 1024 * 1024
-    }
+        return value * 1024 * 1024 * 1024 * 1024
+      }
 
       default: {
-      throw new Error(`Unknown size unit: ${unit}`)
-    }
+        throw new Error(`Unknown size unit: ${unit}`)
+      }
     }
   },
 
@@ -66,28 +66,28 @@ export const Parser = {
 
     switch (unit) {
       case 's': {
-      return value * 1000
-    }
+        return value * 1000
+      }
 
       case 'm': {
-      return value * 60 * 1000
-    }
+        return value * 60 * 1000
+      }
 
       case 'h': {
-      return value * 60 * 60 * 1000
-    }
+        return value * 60 * 60 * 1000
+      }
 
       case 'd': {
-      return value * 24 * 60 * 60 * 1000
-    }
+        return value * 24 * 60 * 60 * 1000
+      }
 
       case 'w': {
-      return value * 7 * 24 * 60 * 60 * 1000
-    }
+        return value * 7 * 24 * 60 * 60 * 1000
+      }
 
       default: {
-      throw new Error(`Unknown time unit: ${unit}`)
-    }
+        throw new Error(`Unknown time unit: ${unit}`)
+      }
     }
   },
 }

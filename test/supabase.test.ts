@@ -106,8 +106,28 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('listProjects()', () => {
       it('should fetch and return projects', async () => {
         const mockProjects = [
-          { id: '1', ref: 'abc', name: 'Project 1', organization_id: 'org1', region: 'us-east-1', created_at: '2024-01-01', database: { host: 'db.host', port: 5432, version: '15' }, status: 'ACTIVE_HEALTHY', inserted_at: '2024-01-01' },
-          { id: '2', ref: 'def', name: 'Project 2', organization_id: 'org1', region: 'us-west-1', created_at: '2024-01-02', database: { host: 'db.host', port: 5432, version: '15' }, status: 'ACTIVE_HEALTHY', inserted_at: '2024-01-02' },
+          {
+            id: '1',
+            ref: 'abc',
+            name: 'Project 1',
+            organization_id: 'org1',
+            region: 'us-east-1',
+            created_at: '2024-01-01',
+            database: { host: 'db.host', port: 5432, version: '15' },
+            status: 'ACTIVE_HEALTHY',
+            inserted_at: '2024-01-01',
+          },
+          {
+            id: '2',
+            ref: 'def',
+            name: 'Project 2',
+            organization_id: 'org1',
+            region: 'us-west-1',
+            created_at: '2024-01-02',
+            database: { host: 'db.host', port: 5432, version: '15' },
+            status: 'ACTIVE_HEALTHY',
+            inserted_at: '2024-01-02',
+          },
         ]
 
         fetchStub.resolves(
@@ -478,8 +498,30 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('listTables()', () => {
       it('should list tables', async () => {
         const mockTables = [
-          { id: '1', schema: 'public', name: 'users', rls_enabled: true, rls_forced: false, replica_identity: 'DEFAULT', bytes: 1024, size: '1KB', live_rows_estimate: 100, dead_rows_estimate: 0 },
-          { id: '2', schema: 'public', name: 'posts', rls_enabled: true, rls_forced: false, replica_identity: 'DEFAULT', bytes: 2048, size: '2KB', live_rows_estimate: 200, dead_rows_estimate: 0 },
+          {
+            id: '1',
+            schema: 'public',
+            name: 'users',
+            rls_enabled: true,
+            rls_forced: false,
+            replica_identity: 'DEFAULT',
+            bytes: 1024,
+            size: '1KB',
+            live_rows_estimate: 100,
+            dead_rows_estimate: 0,
+          },
+          {
+            id: '2',
+            schema: 'public',
+            name: 'posts',
+            rls_enabled: true,
+            rls_forced: false,
+            replica_identity: 'DEFAULT',
+            bytes: 2048,
+            size: '2KB',
+            live_rows_estimate: 200,
+            dead_rows_estimate: 0,
+          },
         ]
 
         fetchStub.resolves(
@@ -527,13 +569,25 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
 
     describe('listExtensions()', () => {
       it('should list extensions', async () => {
-        const mockExtensions = [
-          { name: 'uuid-ossp', default_version: '1.1', installed_version: '1.1', comment: 'UUID generation' },
-          { name: 'pgcrypto', default_version: '1.3', installed_version: '1.3', comment: 'Cryptographic functions' },
-        ]
+        const mockQueryResponse = {
+          rows: [
+            {
+              name: 'uuid-ossp',
+              default_version: '1.1',
+              installed_version: '1.1',
+              comment: 'UUID generation',
+            },
+            {
+              name: 'pgcrypto',
+              default_version: '1.3',
+              installed_version: '1.3',
+              comment: 'Cryptographic functions',
+            },
+          ],
+        }
 
         fetchStub.resolves(
-          new Response(JSON.stringify(mockExtensions), {
+          new Response(JSON.stringify(mockQueryResponse), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           }),
@@ -552,8 +606,18 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('listMigrations()', () => {
       it('should list migrations', async () => {
         const mockMigrations = [
-          { version: '001', name: 'init', statements: ['CREATE TABLE users (id UUID PRIMARY KEY)'], applied_at: '2024-01-01' },
-          { version: '002', name: 'add_posts', statements: ['CREATE TABLE posts (id UUID PRIMARY KEY)'], applied_at: '2024-01-02' },
+          {
+            version: '001',
+            name: 'init',
+            statements: ['CREATE TABLE users (id UUID PRIMARY KEY)'],
+            applied_at: '2024-01-01',
+          },
+          {
+            version: '002',
+            name: 'add_posts',
+            statements: ['CREATE TABLE posts (id UUID PRIMARY KEY)'],
+            applied_at: '2024-01-02',
+          },
         ]
 
         fetchStub.resolves(
@@ -605,7 +669,11 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
           }),
         )
 
-        await supabaseModule.applyMigration('test-ref', 'my_migration', 'CREATE TABLE test (id UUID)')
+        await supabaseModule.applyMigration(
+          'test-ref',
+          'my_migration',
+          'CREATE TABLE test (id UUID)',
+        )
 
         const call = fetchStub.firstCall
         const body = JSON.parse(call.args[1].body)
@@ -619,8 +687,28 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('listFunctions()', () => {
       it('should list edge functions', async () => {
         const mockFunctions = [
-          { id: '1', slug: 'hello', name: 'Hello Function', status: 'ACTIVE' as const, version: 1, created_at: '2024-01-01', updated_at: '2024-01-01', verify_jwt: true, import_map: false },
-          { id: '2', slug: 'goodbye', name: 'Goodbye Function', status: 'ACTIVE' as const, version: 1, created_at: '2024-01-02', updated_at: '2024-01-02', verify_jwt: true, import_map: false },
+          {
+            id: '1',
+            slug: 'hello',
+            name: 'Hello Function',
+            status: 'ACTIVE' as const,
+            version: 1,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+            verify_jwt: true,
+            import_map: false,
+          },
+          {
+            id: '2',
+            slug: 'goodbye',
+            name: 'Goodbye Function',
+            status: 'ACTIVE' as const,
+            version: 1,
+            created_at: '2024-01-02',
+            updated_at: '2024-01-02',
+            verify_jwt: true,
+            import_map: false,
+          },
         ]
 
         fetchStub.resolves(
@@ -700,10 +788,23 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
 
       it('should include files in request', async () => {
         fetchStub.resolves(
-          new Response(JSON.stringify({ id: '1', slug: 'test', name: 'Test', status: 'DEPLOYING', version: 1, created_at: '2024-01-01', updated_at: '2024-01-01', verify_jwt: true, import_map: false }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
+          new Response(
+            JSON.stringify({
+              id: '1',
+              slug: 'test',
+              name: 'Test',
+              status: 'DEPLOYING',
+              version: 1,
+              created_at: '2024-01-01',
+              updated_at: '2024-01-01',
+              verify_jwt: true,
+              import_map: false,
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
         )
 
         const config = {
@@ -755,8 +856,26 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('listBranches()', () => {
       it('should list branches', async () => {
         const mockBranches = [
-          { id: '1', project_id: 'proj1', name: 'main', status: 'ACTIVE' as const, created_at: '2024-01-01', updated_at: '2024-01-01', project_ref: 'abc', persistent: true },
-          { id: '2', project_id: 'proj1', name: 'develop', status: 'ACTIVE' as const, created_at: '2024-01-02', updated_at: '2024-01-02', project_ref: 'def', persistent: false },
+          {
+            id: '1',
+            project_id: 'proj1',
+            name: 'main',
+            status: 'ACTIVE' as const,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+            project_ref: 'abc',
+            persistent: true,
+          },
+          {
+            id: '2',
+            project_id: 'proj1',
+            name: 'develop',
+            status: 'ACTIVE' as const,
+            created_at: '2024-01-02',
+            updated_at: '2024-01-02',
+            project_ref: 'def',
+            persistent: false,
+          },
         ]
 
         fetchStub.resolves(
@@ -802,10 +921,22 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
 
       it('should include branch name in request', async () => {
         fetchStub.resolves(
-          new Response(JSON.stringify({ id: '1', project_id: 'p1', name: 'test', status: 'CREATING', created_at: '2024-01-01', updated_at: '2024-01-01', project_ref: 'abc', persistent: false }), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' },
-          }),
+          new Response(
+            JSON.stringify({
+              id: '1',
+              project_id: 'p1',
+              name: 'test',
+              status: 'CREATING',
+              created_at: '2024-01-01',
+              updated_at: '2024-01-01',
+              project_ref: 'abc',
+              persistent: false,
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
         )
 
         await supabaseModule.createBranch('test-ref', 'my-branch')
@@ -1007,7 +1138,14 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
     describe('getAdvisors()', () => {
       it('should get security advisors', async () => {
         const mockAdvisors = [
-          { type: 'security', category: 'rls', level: 'WARNING' as const, title: 'RLS Not Enabled', description: 'Table users has no RLS policy', remediation_url: 'https://docs.supabase.com/rls' },
+          {
+            type: 'security',
+            category: 'rls',
+            level: 'WARNING' as const,
+            title: 'RLS Not Enabled',
+            description: 'Table users has no RLS policy',
+            remediation_url: 'https://docs.supabase.com/rls',
+          },
         ]
 
         fetchStub.resolves(
@@ -1043,22 +1181,67 @@ describe('Supabase API Wrapper (supabase.ts)', () => {
       it('should aggregate project statistics', async () => {
         // Mock multiple API calls
         fetchStub.onCall(0).resolves(
-          new Response(JSON.stringify([{ id: '1', schema: 'public', name: 'users', bytes: 1024, rls_enabled: true, rls_forced: false, replica_identity: 'DEFAULT', size: '1KB', live_rows_estimate: 100, dead_rows_estimate: 0 }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
+          new Response(
+            JSON.stringify([
+              {
+                id: '1',
+                schema: 'public',
+                name: 'users',
+                bytes: 1024,
+                rls_enabled: true,
+                rls_forced: false,
+                replica_identity: 'DEFAULT',
+                size: '1KB',
+                live_rows_estimate: 100,
+                dead_rows_estimate: 0,
+              },
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
         )
         fetchStub.onCall(1).resolves(
-          new Response(JSON.stringify([{ id: '1', slug: 'hello', name: 'Hello', status: 'ACTIVE', version: 1, created_at: '2024-01-01', updated_at: '2024-01-01', verify_jwt: true, import_map: false }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
+          new Response(
+            JSON.stringify([
+              {
+                id: '1',
+                slug: 'hello',
+                name: 'Hello',
+                status: 'ACTIVE',
+                version: 1,
+                created_at: '2024-01-01',
+                updated_at: '2024-01-01',
+                verify_jwt: true,
+                import_map: false,
+              },
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
         )
         fetchStub.onCall(2).resolves(
-          new Response(JSON.stringify([{ id: '1', project_id: 'p1', name: 'main', status: 'ACTIVE', created_at: '2024-01-01', updated_at: '2024-01-01', project_ref: 'abc', persistent: true }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
+          new Response(
+            JSON.stringify([
+              {
+                id: '1',
+                project_id: 'p1',
+                name: 'main',
+                status: 'ACTIVE',
+                created_at: '2024-01-01',
+                updated_at: '2024-01-01',
+                project_ref: 'abc',
+                persistent: true,
+              },
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
         )
 
         const result = await supabaseModule.getProjectStats('test-ref')

@@ -75,47 +75,47 @@ export class SupabaseError extends Error {
     let code: SupabaseErrorCode
 
     switch (statusCode) {
-    case 401: {
+      case 401: {
         code = SupabaseErrorCode.UNAUTHORIZED
         break
       }
 
-    case 403: {
+      case 403: {
         code = SupabaseErrorCode.UNAUTHORIZED
         break
       }
 
-    case 404: {
+      case 404: {
         code = SupabaseErrorCode.NOT_FOUND
         break
       }
 
-    case 409: {
+      case 409: {
         code = SupabaseErrorCode.ALREADY_EXISTS
         break
       }
 
-    case 422: {
+      case 422: {
         code = SupabaseErrorCode.VALIDATION_ERROR
         break
       }
 
-    case 429: {
+      case 429: {
         code = SupabaseErrorCode.RATE_LIMIT
         break
       }
 
-    case 500: {
+      case 500: {
         code = SupabaseErrorCode.INTERNAL_ERROR
         break
       }
 
-    case 503: {
+      case 503: {
         code = SupabaseErrorCode.API_ERROR
         break
       }
 
-    default: {
+      default: {
         code = SupabaseErrorCode.API_ERROR
       }
     }

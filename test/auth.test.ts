@@ -85,7 +85,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken()
         expect(token).to.equal('file-token-456')
@@ -103,7 +105,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken('production')
         expect(token).to.equal('prod-token-789')
@@ -128,7 +132,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken('nonexistent')
         expect(token).to.be.null
@@ -144,7 +150,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken()
         expect(token).to.be.null
@@ -168,7 +176,9 @@ describe('Authentication Module (auth.ts)', () => {
 
       it('should handle credentials file without profiles', () => {
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify({ other: 'data' }))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify({ other: 'data' }))
 
         const token = auth.getAccessToken()
         expect(token).to.be.null
@@ -194,7 +204,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken()
         expect(token).to.equal('access-token')
@@ -217,7 +229,9 @@ describe('Authentication Module (auth.ts)', () => {
         }
 
         existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-        readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+        readFileSyncStub = sinon
+          .stub(require('fs'), 'readFileSync')
+          .returns(JSON.stringify(mockCredentials))
 
         const token = auth.getAccessToken()
         expect(token).to.equal('token-with-metadata')
@@ -295,7 +309,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       expect(auth.getAccessToken('default')).to.equal('default-token')
       expect(auth.getAccessToken('staging')).to.equal('staging-token')
@@ -305,7 +321,9 @@ describe('Authentication Module (auth.ts)', () => {
     it('should handle read errors gracefully', () => {
       delete process.env.SUPABASE_ACCESS_TOKEN
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').throws(new Error('Permission denied'))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .throws(new Error('Permission denied'))
 
       const token = auth.getAccessToken()
       expect(token).to.be.null
@@ -324,7 +342,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       const token = auth.getAccessToken()
       expect(token).to.equal('minimal-token')
@@ -360,7 +380,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       const token1 = auth.getAccessToken()
       const token2 = auth.getAccessToken()
@@ -384,7 +406,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       const token = auth.getAccessToken()
       expect(token).to.equal('default-token')
@@ -399,7 +423,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       expect(auth.getAccessToken('Production')).to.equal('prod-token')
       expect(auth.getAccessToken('production')).to.equal('prod-token-lowercase')
@@ -413,7 +439,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       const token = auth.getAccessToken('my profile')
       expect(token).to.equal('space-token')
@@ -427,7 +455,9 @@ describe('Authentication Module (auth.ts)', () => {
       }
 
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify(mockCredentials))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify(mockCredentials))
 
       const token = auth.getAccessToken('')
       expect(token).to.equal('empty-name-token')
@@ -448,7 +478,9 @@ describe('Authentication Module (auth.ts)', () => {
     it('should read credentials file with utf-8 encoding', () => {
       delete process.env.SUPABASE_ACCESS_TOKEN
       existsSyncStub = sinon.stub(require('fs'), 'existsSync').returns(true)
-      readFileSyncStub = sinon.stub(require('fs'), 'readFileSync').returns(JSON.stringify({ profiles: {} }))
+      readFileSyncStub = sinon
+        .stub(require('fs'), 'readFileSync')
+        .returns(JSON.stringify({ profiles: {} }))
 
       auth.getAccessToken()
 

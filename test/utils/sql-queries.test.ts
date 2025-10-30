@@ -1,6 +1,11 @@
 import { expect } from 'chai'
 
-import { getAvailableQueries, getQueryByName, hasQuery, SQL_QUERIES } from '../../src/utils/sql-queries'
+import {
+  getAvailableQueries,
+  getQueryByName,
+  hasQuery,
+  SQL_QUERIES,
+} from '../../src/utils/sql-queries'
 
 describe('SQL Queries Utility', () => {
   describe('SQL_QUERIES', () => {

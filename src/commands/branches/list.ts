@@ -74,23 +74,23 @@ export default class BranchesList extends BaseCommand {
         let statusIcon = ''
         switch (branch.status) {
           case 'ACTIVE': {
-          statusIcon = '\u{1F7E2}' // 🟢
-          break
-        }
+            statusIcon = '\u{1F7E2}' // 🟢
+            break
+          }
 
           case 'CREATING': {
-          statusIcon = '\u{1F7E1}' // 🟡
-          break
-        }
+            statusIcon = '\u{1F7E1}' // 🟡
+            break
+          }
 
           case 'ERROR': {
-          statusIcon = '\u{1F534}' // 🔴
-          break
-        }
+            statusIcon = '\u{1F534}' // 🔴
+            break
+          }
 
           default: {
-          statusIcon = '\u{1F535}'
-        } // 🔵
+            statusIcon = '\u{1F535}'
+          } // 🔵
         }
 
         return {
