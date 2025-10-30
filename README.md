@@ -1,4 +1,5 @@
 <div align="center">
+
 <pre>
 ███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
 ██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
@@ -7,8 +8,6 @@
 ███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
 ╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝
 </pre>
-
-<div align="center">
 
 [![CI/CD Pipeline](https://github.com/Coastal-Programs/supabase-cli/workflows/CI/badge.svg)](https://github.com/Coastal-Programs/supabase-cli/actions)
 [![codecov](https://codecov.io/gh/Coastal-Programs/supabase-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/Coastal-Programs/supabase-cli)
