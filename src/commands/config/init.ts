@@ -1,9 +1,10 @@
+import chalk from 'chalk'
 import { Flags } from '@oclif/core'
 import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { getAuthToken, initializeAuth, validateToken } from '../../auth'
+import { getAuthToken, initializeAuth, saveProfileMetadata, validateToken } from '../../auth'
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags } from '../../base-flags'
 import { SupabaseError, SupabaseErrorCode } from '../../errors'
@@ -33,45 +34,76 @@ export default class ConfigInit extends BaseCommand {
     }),
   }
 
+  private stepDivider(): void {
+    this.log('============================================================')
+  }
+
   async run(): Promise<void> {
     const { flags } = await this.parse(ConfigInit)
 
     try {
-      this.header('Initialize Supabase CLI Configuration')
+      // ASCII Art Banner
+      if (!flags.quiet) {
+        this.log('\n')
+        this.log('███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗')
+        this.log('██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║')
+        this.log('███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║')
+        this.log('╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║')
+        this.log('███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║')
+        this.log('╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝')
+        this.log('\n')
+        this.log(chalk.blue('Welcome to Supabase CLI Setup!'))
+        this.log('\n')
+        this.log('This wizard will help you set up your Supabase CLI in 3 steps:')
+        this.log(`  ${chalk.dim('1.')} Configure your Supabase access token`)
+        this.log(`  ${chalk.dim('2.')} Test the connection to Supabase API`)
+        this.log(`  ${chalk.dim('3.')} Configure your workspace scope`)
+        this.log('\n')
+        this.log('Let\'s get started!')
+        this.log('\n')
+      }
 
-      // Step 1: Check for existing token
+      // Step 1: Token Setup
+      if (!flags.quiet) {
+        this.stepDivider()
+        this.log('Step 1/3: Set your Supabase token')
+        this.stepDivider()
+        this.log('\n')
+      }
+
       const existingToken = await getAuthToken()
       let token = flags.token || existingToken
+
+      if (existingToken && !flags.quiet) {
+        this.log('Found existing SUPABASE_ACCESS_TOKEN in environment.')
+        this.log('\n')
+      }
 
       if (!token) {
         // No token found - prompt interactively (unless in non-interactive mode)
         if (flags['no-interactive']) {
           this.error(
-            'No authentication token found.\n\n' +
-              'To get started:\n' +
-              '1. Visit https://supabase.com/dashboard/account/tokens\n' +
-              '2. Generate a new Personal Access Token\n' +
-              '3. Set it using one of these methods:\n\n' +
-              '   Option A: Pass directly to this command\n' +
-              '   $ supabase-cli init --token sbp_your_token_here\n\n' +
-              '   Option B: Set environment variable\n' +
-              '   $ export SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
-              '   $ supabase-cli init\n\n' +
-              '   Option C (Windows PowerShell):\n' +
-              '   $ $env:SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\n' +
+            'No authentication token found.\\n\\n' +
+              'To get started:\\n' +
+              '1. Visit https://supabase.com/dashboard/account/tokens\\n' +
+              '2. Generate a new Personal Access Token\\n' +
+              '3. Set it using one of these methods:\\n\\n' +
+              '   Option A: Pass directly to this command\\n' +
+              '   $ supabase-cli init --token sbp_your_token_here\\n\\n' +
+              '   Option B: Set environment variable\\n' +
+              '   $ export SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\\n' +
+              '   $ supabase-cli init\\n\\n' +
+              '   Option C (Windows PowerShell):\\n' +
+              '   $ $env:SUPABASE_ACCESS_TOKEN="sbp_your_token_here"\\n' +
               '   $ supabase-cli init',
             { exit: 1 },
           )
         }
 
         // Show interactive instructions
-        this.info('No authentication token found.')
-        this.info('')
-        this.info('To get your Supabase access token:')
-        this.info('1. Visit: https://supabase.com/dashboard/account/tokens')
-        this.info('2. Click "Generate New Token"')
-        this.info('3. Copy the token (starts with sbp_)')
-        this.info('')
+        this.log('You need a Supabase access token to use this CLI.')
+        this.log('Get one at: https://supabase.com/dashboard/account/tokens')
+        this.log('\n')
 
         // Prompt for token
         const inquirer = await import('inquirer')
@@ -106,87 +138,168 @@ export default class ConfigInit extends BaseCommand {
         this.error('No token provided', { exit: 1 })
       }
 
-      // Step 2: Validate token format
       if (!flags.quiet) {
-        this.info(`Initializing profile: ${flags.profile}`)
+        this.log('\n')
       }
 
-      // Step 3: Validate token works
+      // Step 2: Test Connection
+      if (!flags.quiet) {
+        this.stepDivider()
+        this.log('Step 2/3: Test the connection to Supabase API')
+        this.stepDivider()
+        this.log('\n')
+      }
+
       const isValid = await this.spinner(
-        'Validating credentials...',
+        'Connecting to Supabase API...',
         async () => validateToken(token),
-        'Credentials validated',
+        'Connected',
       )
 
       if (!isValid) {
         throw new SupabaseError(
-          'Token is invalid or expired.\n\n' +
-            'Please generate a new token from:\n' +
+          'Token is invalid or expired.\\n\\n' +
+            'Please generate a new token from:\\n' +
             'https://supabase.com/dashboard/account/tokens',
           SupabaseErrorCode.INVALID_TOKEN,
           401,
         )
       }
 
-      // Step 4: Initialize auth (stores the token)
+      // Initialize auth (stores the token)
       if (!existingToken || flags.token) {
         await initializeAuth(token)
       }
 
-      // Step 5: Test API access by fetching projects
-      let projectCount = 0
-      let organizationInfo = 'Unknown'
+      if (!flags.quiet) {
+        this.log('\n')
+      }
 
-      try {
-        const projects = await this.spinner(
-          'Testing API access...',
-          async () => listProjects(),
-          'API access confirmed',
-        )
+      // Step 3: Configuration scope
+      if (!flags.quiet) {
+        this.stepDivider()
+        this.log('Step 3/3: Configure your workspace scope')
+        this.stepDivider()
+        this.log('\n')
+      }
 
-        projectCount = projects.length
+      let setupType = 'simple'
+      let scopeType = 'project'
+      let selectedProject: any = null
 
-        if (projects.length > 0) {
-          organizationInfo = projects[0].organization_id
-        }
-      } catch {
-        // Non-fatal - token is valid but maybe no projects yet
-        if (!flags.quiet) {
-          this.warning('Could not fetch projects (you may not have any projects yet)')
+      if (!flags['no-interactive'] && !flags.quiet) {
+        const inquirer = await import('inquirer')
+
+        // Ask about setup type
+        const setupAnswer = await inquirer.default.prompt([
+          {
+            choices: [
+              { name: 'Simple setup (use all organizations and projects)', value: 'simple' },
+              { name: 'Advanced setup (select specific organization or project)', value: 'advanced' },
+            ],
+            default: 'simple',
+            message: 'How would you like to set up the CLI?',
+            name: 'setupType',
+            type: 'list',
+          },
+        ])
+
+        setupType = setupAnswer.setupType
+
+        if (setupType === 'advanced') {
+          const scopeAnswer = await inquirer.default.prompt([
+            {
+              choices: [
+                { name: 'Specific project (just one project)', value: 'project' },
+                { name: 'Organization (all projects in an organization)', value: 'organization' },
+                { name: 'All organizations and projects', value: 'all' },
+              ],
+              default: 'project',
+              message: 'What would you like to scope to?',
+              name: 'scopeType',
+              type: 'list',
+            },
+          ])
+
+          scopeType = scopeAnswer.scopeType
         }
       }
 
-      // Step 6: Ensure config directory exists
+      // Fetch projects
+      const projects = await this.spinner(
+        'Fetching projects...',
+        async () => listProjects(),
+        'Projects fetched',
+      )
+
+      if (!flags.quiet) {
+        this.log(`Found ${projects.length} project(s)`)
+        this.log('\n')
+      }
+
+      // If scoping to specific project, let user select
+      if (scopeType === 'project' && projects.length > 0 && !flags['no-interactive'] && !flags.quiet) {
+        const inquirer = await import('inquirer')
+
+        const projectAnswer = await inquirer.default.prompt([
+          {
+            choices: projects.map((p: any) => ({
+              name: `${p.name} (${p.region || 'unknown region'})`,
+              value: p,
+            })),
+            message: 'Select a project:',
+            name: 'project',
+            type: 'list',
+          },
+        ])
+
+        selectedProject = projectAnswer.project
+        this.log('\n')
+      }
+
+      // Store configuration metadata
+      const metadata: Record<string, unknown> = {
+        scope: scopeType === 'project' && selectedProject ? 'Project' : scopeType === 'organization' ? 'Organization' : 'All',
+      }
+
+      if (selectedProject) {
+        metadata.project_name = selectedProject.name
+        metadata.project_ref = selectedProject.id
+      }
+
+      // Save metadata
+      await saveProfileMetadata(metadata)
+
+      // Ensure config directory exists
       const configDir = join(homedir(), '.supabase-cli')
       if (!existsSync(configDir)) {
         mkdirSync(configDir, { mode: 0o700, recursive: true })
       }
 
-      // Step 7: Display setup summary
+      // Display setup summary
       if (!flags.quiet) {
-        this.divider()
-        this.header('Configuration Summary')
-
-        const summary = {
-          config_path: configDir,
-          organization: organizationInfo,
-          profile: flags.profile,
-          projects: projectCount,
-          status: 'READY',
-          token: token ? `${token.slice(0, 10)}...${token.slice(-4)}` : 'Not set',
+        this.stepDivider()
+        this.log(chalk.green('Setup Complete!'))
+        this.stepDivider()
+        this.log('\n')
+        this.log('Your Supabase CLI is ready to use!')
+        this.log('\n')
+        this.log('Configuration:')
+        this.log(`  Profile: ${flags.profile}`)
+        this.log(`  Config path: ${configDir}`)
+        this.log(`  Scope: ${metadata.scope}`)
+        if (selectedProject) {
+          this.log(`  Project: ${selectedProject.name}`)
         }
-
-        this.output(summary)
-        this.divider()
-      }
-
-      this.success('Configuration initialized successfully!')
-
-      if (!flags.quiet && projectCount === 0) {
-        this.info(
-          "\nYou don't have any projects yet. Create one with:\n" +
-            '$ supabase-cli projects create',
-        )
+        this.log(`  Projects available: ${projects.length}`)
+        this.log('\n')
+        this.log('Next steps:')
+        this.log('  * Try: supabase-cli projects:list')
+        if (selectedProject) {
+          this.log(`  * Try: supabase-cli db:query "SELECT NOW()" --project ${selectedProject.id}`)
+        }
+        this.log('  * Run "supabase-cli --help" for all commands')
+        this.log('\n')
       }
 
       process.exit(0)

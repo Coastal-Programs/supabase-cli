@@ -35,7 +35,7 @@ export const Helper = {
    */
   error(message: string): void {
     // eslint-disable-next-line no-console
-    console.error(chalk.red('✗'), message)
+    console.error(chalk.red('ERROR:'), message)
   },
 
   /**
@@ -224,7 +224,7 @@ export const Helper = {
    */
   info(message: string): void {
     // eslint-disable-next-line no-console
-    console.log(chalk.blue('ℹ'), message)
+    console.log(chalk.blue('INFO:'), message)
   },
 
   /**
@@ -239,7 +239,7 @@ export const Helper = {
    */
   success(message: string): void {
     // eslint-disable-next-line no-console
-    console.log(chalk.green('✓'), message)
+    console.log(chalk.green('SUCCESS:'), message)
   },
 
   /**
@@ -256,6 +256,6 @@ export const Helper = {
    */
   warning(message: string): void {
     // eslint-disable-next-line no-console
-    console.warn(chalk.yellow('⚠'), message)
+    console.warn(chalk.yellow('WARNING:'), message)
   },
 }

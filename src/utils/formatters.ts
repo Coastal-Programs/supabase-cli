@@ -131,12 +131,12 @@ export class OutputFormatter {
    */
   formatConnectionState(state: string): string {
     const stateColors: Record<string, string> = {
-      active: chalk.green('● Active'),
-      disabled: chalk.gray('○ Disabled'),
-      'fastpath function call': chalk.blue('⚡ Fastpath'),
-      idle: chalk.yellow('○ Idle'),
-      'idle in transaction': chalk.red('⚠ Idle in TX'),
-      'idle in transaction (aborted)': chalk.red('✗ TX Aborted'),
+      active: chalk.green('[ACTIVE] Active'),
+      disabled: chalk.gray('[OFF] Disabled'),
+      'fastpath function call': chalk.blue('[FAST] Fastpath'),
+      idle: chalk.yellow('[IDLE] Idle'),
+      'idle in transaction': chalk.red('[WARN] Idle in TX'),
+      'idle in transaction (aborted)': chalk.red('[FAIL] TX Aborted'),
     }
 
     return stateColors[state.toLowerCase()] || state
@@ -166,12 +166,12 @@ export class OutputFormatter {
    */
   formatIndexType(type: string): string {
     const typeMap: Record<string, string> = {
-      brin: chalk.magenta('📈 BRIN'),
-      btree: chalk.green('🌲 B-Tree'),
-      gin: chalk.cyan('📊 GIN'),
-      gist: chalk.blue('🗺  GiST'),
-      hash: chalk.yellow('# Hash'),
-      spgist: chalk.blue('🌿 SP-GiST'),
+      brin: chalk.magenta('BRIN'),
+      btree: chalk.green('B-Tree'),
+      gin: chalk.cyan('GIN'),
+      gist: chalk.blue('GiST'),
+      hash: chalk.yellow('Hash'),
+      spgist: chalk.blue('SP-GiST'),
     }
 
     return typeMap[type.toLowerCase()] || type
@@ -182,10 +182,10 @@ export class OutputFormatter {
    */
   formatOwner(owner: string): string {
     if (owner === 'postgres') {
-      return chalk.magenta(`👤 ${owner}`)
+      return chalk.magenta(`[USER] ${owner}`)
     }
 
-    return chalk.blue(`👤 ${owner}`)
+    return chalk.blue(`[USER] ${owner}`)
   }
 
   /**
@@ -204,7 +204,7 @@ export class OutputFormatter {
   formatPolicyEnforcement(enabled: boolean | string): string {
     const isEnabled = typeof enabled === 'string' ? enabled.toLowerCase() === 'permissive' : enabled
 
-    return isEnabled ? chalk.green('✓ Permissive') : chalk.yellow('⚠ Restrictive')
+    return isEnabled ? chalk.green('[PASS] Permissive') : chalk.yellow('[WARN] Restrictive')
   }
 
   /**
@@ -247,7 +247,7 @@ export class OutputFormatter {
         ? enabled.toLowerCase() === 'true' || enabled.toLowerCase() === 'enabled'
         : enabled
 
-    return isEnabled ? chalk.green('✓ Enabled') : chalk.gray('○ Disabled')
+    return isEnabled ? chalk.green('[ON] Enabled') : chalk.gray('[OFF] Disabled')
   }
 
   /**
@@ -255,10 +255,10 @@ export class OutputFormatter {
    */
   formatTableType(type: string): string {
     const typeMap: Record<string, string> = {
-      'BASE TABLE': chalk.green('📋 Table'),
-      'FOREIGN TABLE': chalk.yellow('🔗 Foreign'),
-      'MATERIALIZED VIEW': chalk.cyan('💾 Mat. View'),
-      VIEW: chalk.blue('👁  View'),
+      'BASE TABLE': chalk.green('Table'),
+      'FOREIGN TABLE': chalk.yellow('Foreign'),
+      'MATERIALIZED VIEW': chalk.cyan('Mat. View'),
+      VIEW: chalk.blue('View'),
     }
 
     return typeMap[type.toUpperCase()] || type
@@ -296,7 +296,7 @@ export class OutputFormatter {
    * Create a section header
    */
   sectionHeader(title: string): string {
-    return chalk.bold.cyan(`\n▸ ${title}\n`)
+    return chalk.bold.cyan(`\n> ${title}\n`)
   }
 
   /**

@@ -20,8 +20,10 @@ export interface Profile {
 
 export interface CredentialStore {
   deleteToken(): Promise<void>
+  getMetadata(): Promise<Record<string, unknown>>
   getToken(): Promise<null | string>
-  saveToken(token: string): Promise<void>
+  saveMetadata(metadata: Record<string, unknown>): Promise<void>
+  saveToken(token: string, metadata?: Record<string, unknown>): Promise<void>
   validateTokenFormat(token: string): boolean
 }
 
@@ -73,7 +75,7 @@ class FileCredentialStore implements CredentialStore {
     }
   }
 
-  async saveToken(token: string): Promise<void> {
+  async saveToken(token: string, metadata?: Record<string, unknown>): Promise<void> {
     if (!this.validateTokenFormat(token)) {
       throw new SupabaseError(
         'Invalid token format. Expected format: sbp_[32+ alphanumeric characters]',
@@ -103,6 +105,7 @@ class FileCredentialStore implements CredentialStore {
       credentials: {
         accessToken: token,
       },
+      metadata: metadata || {},
       updatedAt: new Date().toISOString(),
     }
 
@@ -111,6 +114,58 @@ class FileCredentialStore implements CredentialStore {
     writeFileSync(this.credentialsFile, JSON.stringify(data, null, 2), {
       encoding: 'utf-8',
       mode: 0o600, // Owner read/write only
+    })
+  }
+
+  async getMetadata(): Promise<Record<string, unknown>> {
+    if (!existsSync(this.credentialsFile)) {
+      return {}
+    }
+
+    try {
+      const data = JSON.parse(readFileSync(this.credentialsFile, 'utf-8'))
+      const profileData = data.profiles?.default
+
+      if (!profileData?.metadata) {
+        return {}
+      }
+
+      return profileData.metadata
+    } catch {
+      return {}
+    }
+  }
+
+  async saveMetadata(metadata: Record<string, unknown>): Promise<void> {
+    // Ensure config directory exists
+    if (!existsSync(this.configDir)) {
+      mkdirSync(this.configDir, { mode: 0o700, recursive: true })
+    }
+
+    let data: Record<string, unknown> = {}
+    if (existsSync(this.credentialsFile)) {
+      try {
+        data = JSON.parse(readFileSync(this.credentialsFile, 'utf-8'))
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+
+    if (!data.profiles) {
+      data.profiles = {}
+    }
+
+    const existingProfile = (data.profiles as Record<string, unknown>).default as Record<string, unknown> || {}
+    
+    ;(data.profiles as Record<string, unknown>).default = {
+      ...existingProfile,
+      metadata: metadata,
+      updatedAt: new Date().toISOString(),
+    }
+
+    writeFileSync(this.credentialsFile, JSON.stringify(data, null, 2), {
+      encoding: 'utf-8',
+      mode: 0o600,
     })
   }
 
@@ -275,6 +330,20 @@ export async function ensureAuthenticated(): Promise<string> {
   }
 
   return token
+}
+
+/**
+ * Get profile metadata (project_name, scope, etc.)
+ */
+export async function getProfileMetadata(): Promise<Record<string, unknown>> {
+  return credentialStore.getMetadata()
+}
+
+/**
+ * Save profile metadata (project_name, scope, etc.)
+ */
+export async function saveProfileMetadata(metadata: Record<string, unknown>): Promise<void> {
+  return credentialStore.saveMetadata(metadata)
 }
 
 // Legacy AuthManager class for backward compatibility

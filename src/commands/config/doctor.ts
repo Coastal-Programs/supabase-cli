@@ -229,19 +229,19 @@ export default class ConfigDoctor extends BaseCommand {
 
           switch (check.status) {
             case 'pass': {
-            icon = '\u2713' // ✓
+            icon = '[PASS]'
             color = 'success'
             break
           }
 
             case 'warning': {
-            icon = '\u26A0' // ⚠
+            icon = '[WARN]'
             color = 'warning'
             break
           }
 
             case 'error': {
-            icon = '\u2717' // ✗
+            icon = '[FAIL]'
             color = 'error'
             break
           }
