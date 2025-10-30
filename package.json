@@ -67,7 +67,7 @@
     "dayjs": "^1.11.10",
     "inquirer": "^8.2.6",
     "ora": "^5.4.1",
-    "quick-lru": "^5.1.1"
+    "quick-lru": "^7.3.0"
   },
   "devDependencies": {
     "@oclif/test": "^2.5.6",
