@@ -1,11 +1,11 @@
 import { expect } from 'chai'
-import { randomBytes } from 'crypto'
+import { randomInt } from 'crypto'
 
 /**
  * Tests for security fixes in projects:create command
  *
  * Security fixes tested:
- * 1. Password generation using crypto.randomBytes (not Math.random)
+ * 1. Password generation using crypto.randomInt() for unbiased random selection (not biased randomBytes modulo)
  * 2. Password not logged in clear text
  */
 
@@ -20,9 +20,9 @@ describe('projects:create command - Security Fixes', () => {
       const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
       let password = ''
 
-      // Uses crypto.randomBytes for cryptographic randomness
+      // Uses crypto.randomInt() for unbiased cryptographically secure random selection
       for (let i = 0; i < length; i++) {
-        const randomIndex = randomBytes(1)[0] % charset.length
+        const randomIndex = randomInt(0, charset.length)
         password += charset[randomIndex]
       }
 
@@ -50,7 +50,7 @@ describe('projects:create command - Security Fixes', () => {
       expect(password1).to.not.equal(password3)
     })
 
-    it('should use crypto.randomBytes (not Math.random)', () => {
+    it('should use crypto.randomInt (not biased Math.random or randomBytes modulo)', () => {
       // Generate 100 passwords and check for statistical randomness
       const passwords = new Set<string>()
 
@@ -85,25 +85,25 @@ describe('projects:create command - Security Fixes', () => {
         }
       }
 
-      // Each character should appear at least once across 100 passwords (1600 chars total)
-      // With 78 possible characters, we expect ~20-21 occurrences per character on average
-      // Allow for variance, but ensure no character is completely missing
+      // Each character should appear with fair distribution across 100 passwords (1600 chars total)
+      // With 70 possible characters, we expect ~22.86 occurrences per character on average
+      // Allow for variance, but ensure no character is completely missing due to bias
       const totalChars = Object.values(charCounts).reduce((sum, count) => sum + count, 0)
       expect(totalChars).to.equal(1600) // 100 passwords * 16 chars
 
-      // No character should appear excessively (statistical check for bias)
+      // No character should appear excessively (statistical check for no bias)
       for (const [_char, count] of Object.entries(charCounts)) {
-        // Expected: ~20.5 per char (1600 / 78)
+        // Expected: ~22.86 per char (1600 / 70)
         // Allow range: 0-50 (some chars may not appear due to randomness)
         expect(count).to.be.at.most(50)
       }
     })
 
-    it('should handle crypto.randomBytes correctly', () => {
-      // Verify that randomBytes returns different values
-      const random1 = randomBytes(1)[0]
-      const random2 = randomBytes(1)[0]
-      const random3 = randomBytes(1)[0]
+    it('should handle crypto.randomInt correctly', () => {
+      // Verify that randomInt returns different values
+      const random1 = randomInt(0, 256)
+      const random2 = randomInt(0, 256)
+      const random3 = randomInt(0, 256)
 
       // At least one should be different (probability of all same is negligible)
       const allSame = random1 === random2 && random2 === random3
@@ -207,7 +207,7 @@ describe('projects:create command - Security Fixes', () => {
       let password = ''
 
       for (let i = 0; i < length; i++) {
-        const randomIndex = randomBytes(1)[0] % charset.length
+        const randomIndex = randomInt(0, charset.length)
         password += charset[randomIndex]
       }
 
@@ -258,7 +258,7 @@ describe('projects:create command - Security Fixes', () => {
       let password = ''
 
       for (let i = 0; i < length; i++) {
-        const randomIndex = randomBytes(1)[0] % charset.length
+        const randomIndex = randomInt(0, charset.length)
         password += charset[randomIndex]
       }
 

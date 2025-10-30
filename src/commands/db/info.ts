@@ -45,11 +45,19 @@ export default class DbInfo extends BaseCommand {
       }
 
       // Fetch database info using SQL query
-      const result = await this.spinner(
-        'Fetching database information...',
-        async () => queryDatabase(projectRef, SQL_QUERIES.databaseInfo) as Promise<DatabaseInfo[]>,
-        'Database information fetched successfully',
-      )
+      let result: DatabaseInfo[]
+      if (flags.quiet) {
+        // No spinner in quiet mode
+        result = (await queryDatabase(projectRef, SQL_QUERIES.databaseInfo)) as DatabaseInfo[]
+      } else {
+        // Show spinner in normal mode
+        result = await this.spinner(
+          'Fetching database information...',
+          async () =>
+            queryDatabase(projectRef, SQL_QUERIES.databaseInfo) as Promise<DatabaseInfo[]>,
+          'Database information fetched successfully',
+        )
+      }
 
       const info = result[0]
 

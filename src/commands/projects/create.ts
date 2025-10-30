@@ -1,5 +1,5 @@
 import { Args, Flags } from '@oclif/core'
-import { randomBytes } from 'node:crypto'
+import { randomInt } from 'node:crypto'
 
 import { BaseCommand } from '../../base-command'
 import { AutomationFlags, ConfirmationFlags, OutputFormatFlags } from '../../base-flags'
@@ -130,16 +130,16 @@ export default class ProjectsCreate extends BaseCommand {
 
   /**
    * Generate a secure default password using cryptographically secure random bytes
-   * Fixed: Uses crypto.randomBytes instead of Math.random() for security
+   * Fixed: Uses crypto.randomInt() instead of Math.random() for unbiased random selection
    */
   private generateDefaultPassword(): string {
     const length = 16
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     let password = ''
 
-    // Security fix: Use cryptographically secure random number generation
+    // Security fix: Use crypto.randomInt() for unbiased cryptographically secure random number generation
     for (let i = 0; i < length; i++) {
-      const randomIndex = randomBytes(1)[0] % charset.length
+      const randomIndex = randomInt(0, charset.length)
       password += charset[randomIndex]
     }
 

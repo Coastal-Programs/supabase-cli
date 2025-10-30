@@ -1,12 +1,12 @@
-import chalk from 'chalk'
 import { Flags } from '@oclif/core'
+import chalk from 'chalk'
 import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { getAuthToken, initializeAuth, saveProfileMetadata, validateToken } from '../../auth'
 import { BaseCommand } from '../../base-command'
-import { AutomationFlags } from '../../base-flags'
+import { AutomationFlags, ConfirmationFlags } from '../../base-flags'
 import { SupabaseError, SupabaseErrorCode } from '../../errors'
 import { listProjects } from '../../supabase'
 
@@ -17,11 +17,14 @@ export default class ConfigInit extends BaseCommand {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --profile production',
     '<%= config.bin %> <%= command.id %> --token sbp_your_token_here',
+    '<%= config.bin %> <%= command.id %> --token sbp_your_token_here --yes',
+    '<%= config.bin %> <%= command.id %> --yes',
   ]
 
   static flags = {
     ...BaseCommand.baseFlags,
     ...AutomationFlags,
+    ...ConfirmationFlags,
     profile: Flags.string({
       char: 'p',
       default: 'default',
@@ -34,10 +37,6 @@ export default class ConfigInit extends BaseCommand {
     }),
   }
 
-  private stepDivider(): void {
-    this.log('============================================================')
-  }
-
   async run(): Promise<void> {
     const { flags } = await this.parse(ConfigInit)
 
@@ -45,12 +44,24 @@ export default class ConfigInit extends BaseCommand {
       // ASCII Art Banner
       if (!flags.quiet) {
         this.log('\n')
-        this.log('███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗')
-        this.log('██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║')
-        this.log('███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║')
-        this.log('╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║')
-        this.log('███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║')
-        this.log('╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝')
+        this.log(
+          '███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗',
+        )
+        this.log(
+          '██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║',
+        )
+        this.log(
+          '███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║',
+        )
+        this.log(
+          '╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║',
+        )
+        this.log(
+          '███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║',
+        )
+        this.log(
+          '╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝',
+        )
         this.log('\n')
         this.log(chalk.blue('Welcome to Supabase CLI Setup!'))
         this.log('\n')
@@ -59,7 +70,7 @@ export default class ConfigInit extends BaseCommand {
         this.log(`  ${chalk.dim('2.')} Test the connection to Supabase API`)
         this.log(`  ${chalk.dim('3.')} Configure your workspace scope`)
         this.log('\n')
-        this.log('Let\'s get started!')
+        this.log("Let's get started!")
         this.log('\n')
       }
 
@@ -81,7 +92,7 @@ export default class ConfigInit extends BaseCommand {
 
       if (!token) {
         // No token found - prompt interactively (unless in non-interactive mode)
-        if (flags['no-interactive']) {
+        if (flags['no-interactive'] || flags.yes) {
           this.error(
             'No authentication token found.\\n\\n' +
               'To get started:\\n' +
@@ -187,7 +198,8 @@ export default class ConfigInit extends BaseCommand {
       let scopeType = 'project'
       let selectedProject: any = null
 
-      if (!flags['no-interactive'] && !flags.quiet) {
+      // Use simple setup if --yes flag is provided, otherwise prompt
+      if (!flags['no-interactive'] && !flags.yes && !flags.quiet) {
         const inquirer = await import('inquirer')
 
         // Ask about setup type
@@ -195,7 +207,10 @@ export default class ConfigInit extends BaseCommand {
           {
             choices: [
               { name: 'Simple setup (use all organizations and projects)', value: 'simple' },
-              { name: 'Advanced setup (select specific organization or project)', value: 'advanced' },
+              {
+                name: 'Advanced setup (select specific organization or project)',
+                value: 'advanced',
+              },
             ],
             default: 'simple',
             message: 'How would you like to set up the CLI?',
@@ -237,8 +252,14 @@ export default class ConfigInit extends BaseCommand {
         this.log('\n')
       }
 
-      // If scoping to specific project, let user select
-      if (scopeType === 'project' && projects.length > 0 && !flags['no-interactive'] && !flags.quiet) {
+      // If scoping to specific project, let user select (unless --yes flag is set)
+      if (
+        scopeType === 'project' &&
+        projects.length > 0 &&
+        !flags['no-interactive'] &&
+        !flags.yes &&
+        !flags.quiet
+      ) {
         const inquirer = await import('inquirer')
 
         const projectAnswer = await inquirer.default.prompt([
@@ -259,7 +280,12 @@ export default class ConfigInit extends BaseCommand {
 
       // Store configuration metadata
       const metadata: Record<string, unknown> = {
-        scope: scopeType === 'project' && selectedProject ? 'Project' : scopeType === 'organization' ? 'Organization' : 'All',
+        scope:
+          scopeType === 'project' && selectedProject
+            ? 'Project'
+            : scopeType === 'organization'
+              ? 'Organization'
+              : 'All',
       }
 
       if (selectedProject) {
@@ -291,6 +317,7 @@ export default class ConfigInit extends BaseCommand {
         if (selectedProject) {
           this.log(`  Project: ${selectedProject.name}`)
         }
+
         this.log(`  Projects available: ${projects.length}`)
         this.log('\n')
         this.log('Next steps:')
@@ -298,6 +325,7 @@ export default class ConfigInit extends BaseCommand {
         if (selectedProject) {
           this.log(`  * Try: supabase-cli db:query "SELECT NOW()" --project ${selectedProject.id}`)
         }
+
         this.log('  * Run "supabase-cli --help" for all commands')
         this.log('\n')
       }
@@ -306,5 +334,9 @@ export default class ConfigInit extends BaseCommand {
     } catch (error) {
       this.handleError(error)
     }
+  }
+
+  private stepDivider(): void {
+    this.log('============================================================')
   }
 }

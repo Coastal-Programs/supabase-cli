@@ -127,7 +127,7 @@ export default class MigrationsApply extends BaseCommand {
         }
       }
 
-      // Apply migration
+      // Apply migration - now using correct signature: (ref, name, sql)
       const result = await this.spinner(
         'Applying migration...',
         async () => applyMigration(projectRef, args.name, sql),

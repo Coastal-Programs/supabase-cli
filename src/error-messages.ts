@@ -194,8 +194,6 @@ export const ErrorMessages = {
   RESTORE_FAILED: (error: string) =>
     `Restore operation failed: ${error}. This is a critical operation - contact Supabase support if the issue persists.`,
 
-  RESTRICTION_NOT_FOUND: (id: string) =>
-    `Network restriction '${id}' not found. Run 'supabase-cli security:restrictions:list' to see active restrictions.`,
 
   SCHEMA_NOT_FOUND: (name: string) =>
     `Database schema '${name}' not found. Run 'supabase-cli db:schemas' to see available schemas.`,

@@ -384,139 +384,51 @@ supabase-cli command --debug
 - [x] Sprint 3: Project management commands
 - [x] Sprint 4: Database management commands
 - [x] Phase 2B: Operations & Enterprise Features
-- [ ] Phase 2C: Advanced Features (TBD)
+- [x] Phase 4C: API validation & cleanup
+- [ ] Phase 5: User documentation & guides - IN PROGRESS
 
-## Phase 2B: Operations Features (Latest)
+## Current Implementation Status
 
-### Commands Implemented (17 total)
+### Commands Working (28 total)
 
-**Backup & Recovery (8)**:
-- `backup:list` - List all backups
-- `backup:get` - Get backup details
-- `backup:create` - Create on-demand backup
-- `backup:delete` - Delete backup (destructive)
-- `backup:restore` - Restore from backup (destructive)
-- `backup:schedule:list` - List backup schedules
-- `backup:schedule:create` - Create backup schedule
-- `backup:pitr:restore` - Point-in-time restore (destructive)
+**Backup & Recovery (2)**:
+- `backup:list` - List all backups (API exists: GET /v1/projects/{ref}/database/backups)
+- `backup:pitr:restore` - Point-in-time restore (API exists: POST /v1/projects/{ref}/database/backups/restore-pitr)
 
-**Advanced Database (4)**:
-- `db:replicas:list` - List read replicas
-- `db:replicas:create` - Create read replica
-- `db:replicas:delete` - Delete replica (destructive)
-- `db:config:set` - Set database configuration
+**Advanced Database (0)**:
+- Note: Replica and database config commands are not yet exposed via the Management API
 
-**Network & Security (5)**:
+**Network & Security (2)**:
 - `security:restrictions:list` - List IP restrictions
-- `security:restrictions:add` - Add IP whitelist restriction
-- `security:restrictions:remove` - Remove IP restriction
-- `security:policies:list` - List security policies
 - `security:audit` - Run security audit with color-coded severity
 
-### Implementation Details
+### Deleted Commands (6)
 
-**Cache Management**:
-- List operations: 5-10 min TTL
-- Automatic cache invalidation on writes (create/delete/update)
-- Cache keys: `backups:list:{projectRef}`, `replicas:list:{projectRef}`, etc.
+These commands were removed because their corresponding API endpoints do not exist in the Supabase Management API:
 
-**Error Handling**:
-- All commands use SupabaseError hierarchy
-- Comprehensive error messages
-- Automatic retry for transient failures
-- Circuit breaker prevents cascading failures
+1. ~~`backup:create`~~ - No API endpoint for manual backup creation
+2. ~~`backup:delete`~~ - No API endpoint for backup deletion
+3. ~~`backup:get`~~ - No dedicated endpoint (details are in list response)
+4. ~~`backup:restore`~~ - No API endpoint for backup restoration (use PITR instead)
+5. ~~`backup:schedule:list`~~ - No API endpoint (schedules are plan-based)
+6. ~~`backup:schedule:create`~~ - No API endpoint (schedules are plan-based)
 
-**Confirmation Prompts**:
-- Destructive operations require confirmation
-- `--yes` flag bypasses prompts (for CI/CD)
-- Clear warnings for data loss operations
+**Reason**: Supabase automatically manages backups based on plan tier. Daily backups cannot be manually created, deleted, or scheduled via API.
 
-**Output Formatting**:
-- All commands support --format flag (json, table, yaml)
-- Color-coded output (green=success, red=error, yellow=warning)
-- Security audit uses color-coded severity (red=critical, yellow=high, blue=medium, gray=low)
+### API Validation Notes
 
-### Test Coverage
+**Management API Backup Endpoints**:
+- ✅ Working: `GET /v1/projects/{ref}/database/backups`
+- ✅ Untested: `POST /v1/projects/{ref}/database/backups/restore-pitr`
+- ❌ Does not exist: Create, delete, get single, schedule management
+- ❌ Rate limit: 60 requests/minute for list operations
 
-**Command Tests**: 17 test files (one per command)
-- Happy path testing
-- Error scenarios
-- Flag validation
-- Output formatting
-
-**Integration Tests**: 3 workflow tests
-- Backup lifecycle (create -> list -> restore -> delete)
-- Replica workflow (create -> list -> delete)
-- Security workflow (add restriction -> list -> remove)
-
-**Error Handling Tests**: 3 test files
-- Network errors (timeouts, connection failures)
-- Validation errors (invalid CIDR, missing args)
-- Edge cases (empty results, API limits)
-
-**Branch Coverage Tests**: 3 test files
-- Backup edge cases (PITR, schedule frequency validation)
-- Replica edge cases (region validation, quota limits)
-- Security edge cases (CIDR validation, audit findings)
-
-**Performance Tests**: 8 test files
-- Startup time (< 700ms)
-- Backup operations (< 5s)
-- Replica operations (< 10s)
-- Network operations (< 1s)
-- Memory usage (< 200MB peak)
-- Cache effectiveness (> 75% hit rate)
-- Load testing (concurrent operations)
-- API response times
-
-**Total**: 34+ test files covering all Phase 2B commands
-
-### Quality Metrics
-
-- All commands extend BaseCommand pattern
-- Full error handling with SupabaseError
-- Cache invalidation on destructive operations
-- Confirmation prompts with --yes flag bypass
-- Performance targets met (see docs/PERFORMANCE_REPORT_PHASE2B.md)
-- TypeScript compiles with 0 errors
-- Code follows established patterns
-
-### Performance
-
-See `docs/PERFORMANCE_REPORT_PHASE2B.md` for detailed analysis:
-- Backup operations: < 5 seconds
-- Replica operations: < 10 seconds
-- Network operations: < 1 second
-- Memory usage: < 200MB peak
-- Cache hit rate: > 75%
-- No regressions vs Phase 2A
-
-### API Methods Added to `src/supabase.ts`
-
-**Backup APIs**:
-- `listBackups(projectRef)` - List backups
-- `getBackup(projectRef, backupId)` - Get backup details
-- `createBackup(projectRef, description?)` - Create backup
-- `deleteBackup(projectRef, backupId)` - Delete backup
-- `restoreFromBackup(projectRef, backupId)` - Restore backup
-- `listBackupSchedules(projectRef)` - List schedules
-- `createBackupSchedule(projectRef, frequency, retention)` - Create schedule
-- `restoreFromPITR(projectRef, timestamp)` - Point-in-time restore
-
-**Replica APIs**:
-- `listDatabaseReplicas(projectRef)` - List replicas
-- `createDatabaseReplica(projectRef, location)` - Create replica
-- `deleteDatabaseReplica(projectRef, replicaId)` - Delete replica
-
-**Database Config APIs**:
-- `setDatabaseConfig(projectRef, settings)` - Set config
-
-**Security APIs**:
-- `listNetworkRestrictions(projectRef)` - List restrictions
-- `addNetworkRestriction(projectRef, cidr, description?)` - Add restriction
-- `removeNetworkRestriction(projectRef, restrictionId)` - Remove restriction
-- `listSecurityPolicies(projectRef)` - List policies
-- `runSecurityAudit(projectRef)` - Run audit
+**Backup Features by Plan**:
+- Free: No backups
+- Pro: 7 days of daily backups
+- Team: 14 days of daily backups
+- Enterprise: Up to 30 days of daily backups
+- PITR: $100-$400/month depending on retention window
 
 ## AI Agent Quick Tips
 
@@ -534,11 +446,13 @@ See `docs/PERFORMANCE_REPORT_PHASE2B.md` for detailed analysis:
 12. **Invalidate cache** after write operations
 13. **Document all flags** in command descriptions
 14. **Use color-coding** for severity/status indicators
+15. **Verify API endpoints exist** before implementing commands
+16. **Check docs/api/endpoints/** for endpoint documentation
 
 ## Need Help?
 
 - Check existing commands in `src/commands/`
 - Review test files in `test/`
 - Read architecture docs in `docs/`
-- See Phase 2B commands for latest patterns
-- Check `docs/PERFORMANCE_REPORT_PHASE2B.md` for performance benchmarks
+- Check `docs/api/endpoints/` for API documentation
+- See `docs/SECURITY_COMMANDS_STATUS.txt` for research on non-existent endpoints

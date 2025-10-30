@@ -423,6 +423,12 @@ export interface APIKeysResponse {
   service_role: string
 }
 
+// Function Invocation Types
+export interface FunctionInvocation {
+  data: unknown
+  status: number
+}
+
 // Helper: Get auth headers
 async function getAuthHeader(): Promise<{ Authorization: string }> {
   const token = await getAuthToken()
@@ -503,31 +509,56 @@ async function cachedFetch<T>(
     return cached
   }
 
+  // Not in cache, fetch and cache
+  const data = await fetcher()
+  cache.set(cacheKey, data, ttl ?? CACHE_TTL.PROJECT)
+
   if (DEBUG) {
-    console.log(`[SUPABASE] Cache miss: ${cacheKey}`)
+    console.log(`[SUPABASE] Cache miss, fetched and cached: ${cacheKey}`)
   }
 
-  // Fetch with retry
-  const result = await fetcher()
-
-  // Store in cache
-  cache.set(cacheKey, result, ttl)
-
-  return result
+  return data
 }
 
-// Helper: Invalidate cache for resource type
-function invalidateCache(resourceType: string, resourceId?: string): void {
-  if (resourceId) {
-    cache.delete(`${resourceType}:${resourceId}`)
-  } else {
-    // Invalidate all keys of this type
-    for (const key of cache.keys()) {
-      if (key.startsWith(`${resourceType}:`)) {
-        cache.delete(key)
-      }
-    }
+// Helper: Invalidate cache
+function invalidateCache(resourceType: string, resourceId: string): void {
+  const cacheKey = `${resourceType}:${resourceId}`
+  cache.delete(cacheKey)
+
+  if (DEBUG) {
+    console.log(`[SUPABASE] Cache invalidated: ${cacheKey}`)
   }
+}
+
+// Helper: Get project URL for client-side APIs
+function getProjectUrl(ref: string): string {
+  return `https://${ref}.supabase.co`
+}
+
+// ============================================================================
+// AUTHENTICATION
+// ============================================================================
+
+/**
+ * Authenticate and get organizations
+ */
+export async function listOrganizations(): Promise<Organization[]> {
+  const headers = await getAuthHeader()
+  return enhancedFetch<Organization[]>(`${API_BASE_URL}/organizations`, {
+    headers,
+    method: 'GET',
+  })
+}
+
+/**
+ * Get specific organization
+ */
+export async function getOrganization(orgId: string): Promise<Organization> {
+  const headers = await getAuthHeader()
+  return enhancedFetch<Organization>(`${API_BASE_URL}/organizations/${orgId}`, {
+    headers,
+    method: 'GET',
+  })
 }
 
 // ============================================================================
@@ -535,7 +566,7 @@ function invalidateCache(resourceType: string, resourceId?: string): void {
 // ============================================================================
 
 /**
- * List all projects accessible to the authenticated user
+ * List projects
  */
 export async function listProjects(): Promise<Project[]> {
   return cachedFetch(
@@ -544,10 +575,7 @@ export async function listProjects(): Promise<Project[]> {
     async () => {
       const headers = await getAuthHeader()
       return enhancedFetch<Project[]>(`${API_BASE_URL}/projects`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
+        headers,
         method: 'GET',
       })
     },
@@ -556,7 +584,7 @@ export async function listProjects(): Promise<Project[]> {
 }
 
 /**
- * Get details for a specific project
+ * Get specific project
  */
 export async function getProject(ref: string): Promise<Project> {
   return cachedFetch(
@@ -565,10 +593,7 @@ export async function getProject(ref: string): Promise<Project> {
     async () => {
       const headers = await getAuthHeader()
       return enhancedFetch<Project>(`${API_BASE_URL}/projects/${ref}`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
+        headers,
         method: 'GET',
       })
     },
@@ -577,11 +602,11 @@ export async function getProject(ref: string): Promise<Project> {
 }
 
 /**
- * Create a new project
+ * Create project
  */
 export async function createProject(config: CreateProjectConfig): Promise<Project> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<Project>(
+  const project = await enhancedFetch<Project>(
     `${API_BASE_URL}/projects`,
     {
       body: JSON.stringify(config),
@@ -594,91 +619,437 @@ export async function createProject(config: CreateProjectConfig): Promise<Projec
     'create project',
   )
 
-  // Invalidate projects cache
-  invalidateCache('projects')
+  // Invalidate list cache
+  invalidateCache('projects', 'all')
 
-  return result
+  return project
 }
 
 /**
- * Delete a project
+ * Delete project
  */
 export async function deleteProject(ref: string): Promise<void> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  await enhancedFetch(
     `${API_BASE_URL}/projects/${ref}`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'DELETE',
     },
     'delete project',
   )
 
   // Invalidate caches
-  invalidateCache('projects')
+  invalidateCache('projects', 'all')
   invalidateCache('project', ref)
 }
 
 /**
- * Pause a project (paid plans only)
+ * Pause project
  */
-export async function pauseProject(ref: string): Promise<void> {
+export async function pauseProject(ref: string): Promise<Project> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  const project = await enhancedFetch<Project>(
     `${API_BASE_URL}/projects/${ref}/pause`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'POST',
     },
     'pause project',
   )
 
   // Invalidate caches
+  invalidateCache('projects', 'all')
   invalidateCache('project', ref)
+
+  return project
 }
 
 /**
- * Restore a paused project
+ * Restore project
  */
-export async function restoreProject(ref: string): Promise<void> {
+export async function restoreProject(ref: string): Promise<Project> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  const project = await enhancedFetch<Project>(
     `${API_BASE_URL}/projects/${ref}/restore`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'POST',
     },
     'restore project',
   )
 
   // Invalidate caches
+  invalidateCache('projects', 'all')
   invalidateCache('project', ref)
+
+  return project
 }
 
 // ============================================================================
-// DATABASE OPERATIONS
+// BRANCHES
 // ============================================================================
 
 /**
- * Execute a SQL query against the database
- *
- * CRITICAL FIX: The Management API returns an array of objects directly,
- * not wrapped in { rows: [] }. Response format:
- * [
- *   { "column1": "value1", "column2": "value2" },
- *   { "column1": "value3", "column2": "value4" }
- * ]
- *
- * See: docs/testing/api-test-report.md line 145-150
+ * List preview branches
+ */
+export async function listBranches(ref: string): Promise<Branch[]> {
+  return cachedFetch(
+    'branches',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      return enhancedFetch<Branch[]>(`${API_BASE_URL}/projects/${ref}/branches`, {
+        headers,
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.BRANCH,
+  )
+}
+
+/**
+ * Create preview branch
+ */
+export async function createBranch(
+  ref: string,
+  name: string,
+  options?: { gitBranch?: string },
+): Promise<Branch> {
+  const headers = await getAuthHeader()
+  const branch = await enhancedFetch<Branch>(
+    `${API_BASE_URL}/projects/${ref}/branches`,
+    {
+      body: JSON.stringify({
+        git_branch: options?.gitBranch,
+        name,
+      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'create branch',
+  )
+
+  // Invalidate cache
+  invalidateCache('branches', ref)
+
+  return branch
+}
+
+/**
+ * Delete preview branch
+ */
+export async function deleteBranch(ref: string, branchId: string): Promise<void> {
+  const headers = await getAuthHeader()
+  await enhancedFetch(
+    `${API_BASE_URL}/projects/${ref}/branches/${branchId}`,
+    {
+      headers,
+      method: 'DELETE',
+    },
+    'delete branch',
+  )
+
+  // Invalidate cache
+  invalidateCache('branches', ref)
+}
+
+/**
+ * Reset branch to main
+ */
+export async function resetBranch(ref: string, branchId: string): Promise<Branch> {
+  const headers = await getAuthHeader()
+  return enhancedFetch<Branch>(
+    `${API_BASE_URL}/projects/${ref}/branches/${branchId}/reset`,
+    {
+      headers,
+      method: 'POST',
+    },
+    'reset branch',
+  )
+}
+
+/**
+ * Rebase branch
+ */
+export async function rebaseBranch(ref: string, branchId: string): Promise<Branch> {
+  const headers = await getAuthHeader()
+  return enhancedFetch<Branch>(
+    `${API_BASE_URL}/projects/${ref}/branches/${branchId}/rebase`,
+    {
+      headers,
+      method: 'POST',
+    },
+    'rebase branch',
+  )
+}
+
+/**
+ * Merge branch into main
+ */
+export async function mergeBranch(ref: string, branchId: string): Promise<void> {
+  const headers = await getAuthHeader()
+  await enhancedFetch(
+    `${API_BASE_URL}/projects/${ref}/branches/${branchId}/merge`,
+    {
+      headers,
+      method: 'POST',
+    },
+    'merge branch',
+  )
+
+  // Invalidate cache
+  invalidateCache('branches', ref)
+}
+
+// ============================================================================
+// MIGRATIONS
+// ============================================================================
+
+/**
+ * List migrations
+ */
+export async function listMigrations(ref: string): Promise<Migration[]> {
+  return cachedFetch(
+    'migrations',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      return enhancedFetch<Migration[]>(`${API_BASE_URL}/projects/${ref}/migrations`, {
+        headers,
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.MIGRATION,
+  )
+}
+
+/**
+ * Apply migration
+ */
+export async function applyMigration(ref: string, name: string, sql: string): Promise<Migration> {
+  const headers = await getAuthHeader()
+  const migration = await enhancedFetch<Migration>(
+    `${API_BASE_URL}/projects/${ref}/migrations`,
+    {
+      body: JSON.stringify({
+        name,
+        statements: [sql],
+      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'apply migration',
+  )
+
+  // Invalidate cache
+  invalidateCache('migrations', ref)
+
+  return migration
+}
+
+// ============================================================================
+// EDGE FUNCTIONS
+// ============================================================================
+
+/**
+ * List edge functions
+ */
+export async function listFunctions(ref: string): Promise<EdgeFunction[]> {
+  return cachedFetch(
+    'functions',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      return enhancedFetch<EdgeFunction[]>(`${API_BASE_URL}/projects/${ref}/functions`, {
+        headers,
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.FUNCTION,
+  )
+}
+
+/**
+ * Get specific function
+ */
+export async function getFunction(ref: string, slug: string): Promise<EdgeFunction> {
+  const headers = await getAuthHeader()
+  return enhancedFetch<EdgeFunction>(`${API_BASE_URL}/projects/${ref}/functions/${slug}`, {
+    headers,
+    method: 'GET',
+  })
+}
+
+/**
+ * Deploy function
+ */
+export async function deployFunction(
+  ref: string,
+  config: DeployFunctionConfig,
+): Promise<EdgeFunction> {
+  const headers = await getAuthHeader()
+  const func = await enhancedFetch<EdgeFunction>(
+    `${API_BASE_URL}/projects/${ref}/functions/${config.slug}`,
+    {
+      body: JSON.stringify(config),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'deploy function',
+  )
+
+  // Invalidate cache
+  invalidateCache('functions', ref)
+
+  return func
+}
+
+/**
+ * Delete function
+ */
+export async function deleteFunction(ref: string, slug: string): Promise<void> {
+  const headers = await getAuthHeader()
+  await enhancedFetch(
+    `${API_BASE_URL}/projects/${ref}/functions/${slug}`,
+    {
+      headers,
+      method: 'DELETE',
+    },
+    'delete function',
+  )
+
+  // Invalidate cache
+  invalidateCache('functions', ref)
+}
+
+/**
+ * Invoke edge function
+ * Note: This uses the project URL, not the management API
+ */
+export async function invokeFunction(
+  ref: string,
+  slug: string,
+  options?: {
+    body?: unknown
+    method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
+  },
+): Promise<FunctionInvocation> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+  const method = options?.method || 'POST'
+
+  const response = await retry.execute(async () => {
+    const fetchOptions: RequestInit = {
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method,
+    }
+
+    if (options?.body && method !== 'GET') {
+      fetchOptions.body = JSON.stringify(options.body)
+    }
+
+    const res = await fetch(`${projectUrl}/functions/v1/${slug}`, fetchOptions)
+
+    // Don't throw on non-2xx status codes, return them as part of the result
+    const data = await res.json().catch(() => null)
+
+    return {
+      data,
+      status: res.status,
+    }
+  })
+
+  if (DEBUG) {
+    console.log(`[SUPABASE] Invoked function ${slug}: status ${response.status}`)
+  }
+
+  return response
+}
+
+// ============================================================================
+// SECRETS
+// ============================================================================
+
+/**
+ * List secrets
+ */
+export async function listSecrets(ref: string): Promise<Secret[]> {
+  return cachedFetch(
+    'secrets',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      return enhancedFetch<Secret[]>(`${API_BASE_URL}/projects/${ref}/secrets`, {
+        headers,
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.SECRET,
+  )
+}
+
+/**
+ * Create secret
+ */
+export async function createSecret(ref: string, name: string, value: string): Promise<Secret> {
+  const headers = await getAuthHeader()
+  const secret = await enhancedFetch<Secret>(
+    `${API_BASE_URL}/projects/${ref}/secrets`,
+    {
+      body: JSON.stringify({ name, value }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'create secret',
+  )
+
+  // Invalidate cache
+  invalidateCache('secrets', ref)
+
+  return secret
+}
+
+/**
+ * Delete secret
+ */
+export async function deleteSecret(ref: string, name: string): Promise<void> {
+  const headers = await getAuthHeader()
+  await enhancedFetch(
+    `${API_BASE_URL}/projects/${ref}/secrets/${name}`,
+    {
+      headers,
+      method: 'DELETE',
+    },
+    'delete secret',
+  )
+
+  // Invalidate cache
+  invalidateCache('secrets', ref)
+}
+
+// ============================================================================
+// DATABASE - QUERIES
+// ============================================================================
+
+/**
+ * Execute SQL query against database
+ * Used for database introspection and custom queries
  */
 export async function queryDatabase(ref: string, sql: string): Promise<unknown[]> {
   const headers = await getAuthHeader()
@@ -730,1000 +1101,42 @@ export async function listTables(ref: string, schema = 'public'): Promise<Table[
 export async function getTableSchema(ref: string, table: string): Promise<unknown> {
   const headers = await getAuthHeader()
   return enhancedFetch<unknown>(`${API_BASE_URL}/projects/${ref}/database/tables/${table}`, {
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
+    headers,
     method: 'GET',
   })
 }
 
 /**
- * List database extensions
+ * List extensions
  */
 export async function listExtensions(ref: string): Promise<Extension[]> {
   return cachedFetch(
     'extensions',
     ref,
     async () => {
-      // Query PostgreSQL system catalogs directly since Management API doesn't have extensions endpoint
-      const sql = `
-        SELECT
-          pae.name,
-          pae.default_version,
-          COALESCE(pe.extversion, NULL) as installed_version,
-          pae.comment
-        FROM pg_available_extensions pae
-        LEFT JOIN pg_extension pe ON pe.extname = pae.name
-        ORDER BY pae.name;
-      `
-
-      const rows = await queryDatabase(ref, sql)
-
-      // Transform rows to Extension type
-      return rows.map((row: any) => ({
-        name: row.name,
-        default_version: row.default_version,
-        installed_version: row.installed_version,
-        comment: row.comment,
-      }))
+      const headers = await getAuthHeader()
+      return enhancedFetch<Extension[]>(`${API_BASE_URL}/projects/${ref}/database/extensions`, {
+        headers,
+        method: 'GET',
+      })
     },
     CACHE_TTL.EXTENSION,
   )
 }
 
 /**
- * Dump database schema
+ * Dump database
  */
-export async function dumpDatabase(ref: string, schema?: string): Promise<string> {
+export async function dumpDatabase(ref: string): Promise<unknown> {
   const headers = await getAuthHeader()
-  const url = schema
-    ? `${API_BASE_URL}/projects/${ref}/database/dump?schema=${schema}`
-    : `${API_BASE_URL}/projects/${ref}/database/dump`
-
-  return enhancedFetch<string>(url, {
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
-    method: 'GET',
-  })
-}
-
-// ============================================================================
-// MIGRATIONS
-// ============================================================================
-
-/**
- * List all migrations for a project
- */
-export async function listMigrations(ref: string): Promise<Migration[]> {
-  return cachedFetch(
-    'migrations',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Migration[]>(`${API_BASE_URL}/projects/${ref}/database/migrations`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.MIGRATION,
-  )
-}
-
-/**
- * Apply a new migration
- */
-export async function applyMigration(ref: string, name: string, sql: string): Promise<Migration> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<Migration>(
-    `${API_BASE_URL}/projects/${ref}/database/migrations`,
+  return enhancedFetch<unknown>(
+    `${API_BASE_URL}/projects/${ref}/database/dump`,
     {
-      body: JSON.stringify({ name, query: sql }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
+      headers,
+      method: 'GET',
     },
-    'apply migration',
+    'dump database',
   )
-
-  // Invalidate caches
-  invalidateCache('migrations', ref)
-  invalidateCache('tables', ref)
-
-  return result
-}
-
-// ============================================================================
-// EDGE FUNCTIONS
-// ============================================================================
-
-/**
- * List all edge functions for a project
- */
-export async function listFunctions(ref: string): Promise<EdgeFunction[]> {
-  return cachedFetch(
-    'functions',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<EdgeFunction[]>(`${API_BASE_URL}/projects/${ref}/functions`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.FUNCTION,
-  )
-}
-
-/**
- * Get details for a specific edge function
- */
-export async function getFunction(ref: string, slug: string): Promise<EdgeFunction> {
-  return cachedFetch(
-    'function',
-    `${ref}:${slug}`,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<EdgeFunction>(`${API_BASE_URL}/projects/${ref}/functions/${slug}`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.FUNCTION,
-  )
-}
-
-/**
- * Deploy an edge function
- */
-export async function deployFunction(
-  ref: string,
-  config: DeployFunctionConfig,
-): Promise<EdgeFunction> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<EdgeFunction>(
-    `${API_BASE_URL}/projects/${ref}/functions/${config.slug}/deploy`,
-    {
-      body: JSON.stringify({
-        entrypoint_path: config.entrypoint_path || 'index.ts',
-        files: config.files,
-        import_map_path: config.import_map_path,
-        verify_jwt: config.verify_jwt ?? true,
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'deploy function',
-  )
-
-  // Invalidate caches
-  invalidateCache('functions', ref)
-  invalidateCache('function', `${ref}:${config.slug}`)
-
-  return result
-}
-
-/**
- * Delete an edge function
- */
-export async function deleteFunction(ref: string, slug: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/functions/${slug}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'DELETE',
-    },
-    'delete function',
-  )
-
-  // Invalidate caches
-  invalidateCache('functions', ref)
-  invalidateCache('function', `${ref}:${slug}`)
-}
-
-/**
- * Invoke an edge function
- */
-export async function invokeFunction(
-  ref: string,
-  slug: string,
-  options: {
-    body?: unknown
-    headers?: Record<string, string>
-    method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
-  } = {},
-): Promise<{ data: unknown; status: number }> {
-  const headers = await getAuthHeader()
-  const method = options.method || 'POST'
-
-  const requestOptions: RequestInit = {
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    method,
-  }
-
-  if (options.body && method !== 'GET') {
-    requestOptions.body = JSON.stringify(options.body)
-  }
-
-  // Direct fetch without retry for invoke (user may want to see actual errors)
-  const response = await fetch(
-    `${API_BASE_URL}/projects/${ref}/functions/${slug}/invoke`,
-    requestOptions,
-  )
-
-  let data: unknown
-  try {
-    data = await response.json()
-  } catch {
-    data = await response.text()
-  }
-
-  return {
-    data,
-    status: response.status,
-  }
-}
-
-// ============================================================================
-// BRANCHES
-// ============================================================================
-
-/**
- * List all branches for a project
- */
-export async function listBranches(ref: string): Promise<Branch[]> {
-  return cachedFetch(
-    'branches',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Branch[]>(`${API_BASE_URL}/projects/${ref}/branches`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.BRANCH,
-  )
-}
-
-/**
- * Create a new branch
- */
-export async function createBranch(
-  ref: string,
-  name: string,
-  confirmCostId?: string,
-): Promise<Branch> {
-  const headers = await getAuthHeader()
-  const body: Record<string, unknown> = { branch_name: name }
-  if (confirmCostId) {
-    body.confirm_cost_id = confirmCostId
-  }
-
-  const result = await enhancedFetch<Branch>(
-    `${API_BASE_URL}/projects/${ref}/branches`,
-    {
-      body: JSON.stringify(body),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'create branch',
-  )
-
-  // Invalidate caches
-  invalidateCache('branches', ref)
-
-  return result
-}
-
-/**
- * Delete a branch
- */
-export async function deleteBranch(branchId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/branches/${branchId}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'DELETE',
-    },
-    'delete branch',
-  )
-
-  // Invalidate branches cache (we don't know which project)
-  invalidateCache('branches')
-}
-
-/**
- * Merge a branch to production
- */
-export async function mergeBranch(branchId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/branches/${branchId}/merge`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'merge branch',
-  )
-
-  // Invalidate branches cache
-  invalidateCache('branches')
-}
-
-/**
- * Reset a branch to a specific migration version
- */
-export async function resetBranch(branchId: string, migrationVersion?: string): Promise<void> {
-  const headers = await getAuthHeader()
-  const body = migrationVersion ? { migration_version: migrationVersion } : {}
-
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/branches/${branchId}/reset`,
-    {
-      body: JSON.stringify(body),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'reset branch',
-  )
-
-  // Invalidate branches cache
-  invalidateCache('branches')
-}
-
-/**
- * Rebase a branch with production migrations
- */
-export async function rebaseBranch(branchId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/branches/${branchId}/rebase`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'rebase branch',
-  )
-
-  // Invalidate branches cache
-  invalidateCache('branches')
-}
-
-// ============================================================================
-// SECRETS
-// ============================================================================
-
-/**
- * List all secrets for a project (values are hidden)
- */
-export async function listSecrets(ref: string): Promise<Secret[]> {
-  return cachedFetch(
-    'secrets',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Secret[]>(`${API_BASE_URL}/projects/${ref}/secrets`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.SECRET,
-  )
-}
-
-/**
- * Create or update secrets
- */
-export async function createSecret(ref: string, name: string, value: string): Promise<Secret> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<Secret>(
-    `${API_BASE_URL}/projects/${ref}/secrets`,
-    {
-      body: JSON.stringify({
-        secrets: [{ name, value }],
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'create secret',
-  )
-
-  // Invalidate caches
-  invalidateCache('secrets', ref)
-
-  return result
-}
-
-/**
- * Delete a secret
- */
-export async function deleteSecret(ref: string, name: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/secrets/${name}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'DELETE',
-    },
-    'delete secret',
-  )
-
-  // Invalidate caches
-  invalidateCache('secrets', ref)
-}
-
-// ============================================================================
-// STORAGE
-// ============================================================================
-
-/**
- * List all storage buckets for a project
- */
-export async function getStorageBuckets(ref: string): Promise<StorageBucket[]> {
-  return cachedFetch(
-    'storage-buckets',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<StorageBucket[]>(`${API_BASE_URL}/projects/${ref}/storage/buckets`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.STORAGE,
-  )
-}
-
-/**
- * Get details for a specific storage bucket
- */
-export async function getStorageBucket(ref: string, bucketId: string): Promise<StorageBucket> {
-  return cachedFetch(
-    'storage-bucket',
-    `${ref}:${bucketId}`,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<StorageBucket>(
-        `${API_BASE_URL}/projects/${ref}/storage/buckets/${bucketId}`,
-        {
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-        },
-      )
-    },
-    CACHE_TTL.STORAGE,
-  )
-}
-
-/**
- * Create a new storage bucket
- */
-export async function createStorageBucket(
-  ref: string,
-  name: string,
-  isPublic = false,
-): Promise<StorageBucket> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<StorageBucket>(
-    `${API_BASE_URL}/projects/${ref}/storage/buckets`,
-    {
-      body: JSON.stringify({
-        name,
-        public: isPublic,
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'create storage bucket',
-  )
-
-  // Invalidate caches
-  invalidateCache('storage-buckets', ref)
-
-  return result
-}
-
-/**
- * Delete a storage bucket
- */
-export async function deleteStorageBucket(ref: string, bucketId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/storage/buckets/${bucketId}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'DELETE',
-    },
-    'delete storage bucket',
-  )
-
-  // Invalidate caches
-  invalidateCache('storage-buckets', ref)
-  invalidateCache('storage-bucket', `${ref}:${bucketId}`)
-}
-
-/**
- * List storage policies for a bucket
- */
-export async function getStoragePolicies(ref: string, bucketId: string): Promise<StoragePolicy[]> {
-  return cachedFetch(
-    'storage-policies',
-    `${ref}:${bucketId}`,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<StoragePolicy[]>(
-        `${API_BASE_URL}/projects/${ref}/storage/buckets/${bucketId}/policies`,
-        {
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-        },
-      )
-    },
-    CACHE_TTL.STORAGE,
-  )
-}
-
-/**
- * Set storage policies for a bucket
- */
-export async function setStoragePolicies(
-  ref: string,
-  bucketId: string,
-  policies: Partial<StoragePolicy>[],
-): Promise<StoragePolicy[]> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<StoragePolicy[]>(
-    `${API_BASE_URL}/projects/${ref}/storage/buckets/${bucketId}/policies`,
-    {
-      body: JSON.stringify({ policies }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'set storage policies',
-  )
-
-  // Invalidate caches
-  invalidateCache('storage-policies', `${ref}:${bucketId}`)
-
-  return result
-}
-
-// ============================================================================
-// AUTHENTICATION
-// ============================================================================
-
-/**
- * List all SSO providers
- */
-export async function getSSOProviders(ref: string): Promise<SSOProvider[]> {
-  return cachedFetch(
-    'sso-providers',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<SSOProvider[]>(`${API_BASE_URL}/projects/${ref}/auth/sso/providers`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.AUTH,
-  )
-}
-
-/**
- * Enable SSO provider
- */
-export async function enableSSOProvider(
-  ref: string,
-  providerId: string,
-  config: Record<string, unknown>,
-): Promise<SSOProvider> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<SSOProvider>(
-    `${API_BASE_URL}/projects/${ref}/auth/sso/providers/${providerId}/enable`,
-    {
-      body: JSON.stringify({ config }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'enable SSO provider',
-  )
-
-  // Invalidate caches
-  invalidateCache('sso-providers', ref)
-
-  return result
-}
-
-/**
- * Disable SSO provider
- */
-export async function disableSSOProvider(ref: string, providerId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/auth/sso/providers/${providerId}/disable`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'disable SSO provider',
-  )
-
-  // Invalidate caches
-  invalidateCache('sso-providers', ref)
-}
-
-/**
- * Get JWT signing key
- */
-export async function getJWTKey(ref: string): Promise<JWTKey> {
-  return cachedFetch(
-    'jwt-key',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<JWTKey>(`${API_BASE_URL}/projects/${ref}/auth/jwt`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.AUTH,
-  )
-}
-
-/**
- * Rotate JWT signing key
- */
-export async function rotateJWTKey(ref: string): Promise<JWTKey> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<JWTKey>(
-    `${API_BASE_URL}/projects/${ref}/auth/jwt/rotate`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'rotate JWT key',
-  )
-
-  // Invalidate caches
-  invalidateCache('jwt-key', ref)
-
-  return result
-}
-
-/**
- * List auth providers
- */
-export async function getAuthProviders(ref: string): Promise<AuthProvider[]> {
-  return cachedFetch(
-    'auth-providers',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<AuthProvider[]>(`${API_BASE_URL}/projects/${ref}/auth/providers`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.AUTH,
-  )
-}
-
-/**
- * Set auth provider configuration
- */
-export async function setAuthProviderConfig(
-  ref: string,
-  provider: string,
-  key: string,
-  value: string,
-): Promise<AuthProviderConfig> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<AuthProviderConfig>(
-    `${API_BASE_URL}/projects/${ref}/auth/providers/${provider}/config`,
-    {
-      body: JSON.stringify({ [key]: value }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'PATCH',
-    },
-    'set auth provider config',
-  )
-
-  // Invalidate caches
-  invalidateCache('auth-providers', ref)
-
-  return result
-}
-
-/**
- * Set auth service configuration
- */
-export async function setAuthServiceConfig(
-  ref: string,
-  settings: Record<string, unknown>,
-): Promise<AuthServiceConfig> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<AuthServiceConfig>(
-    `${API_BASE_URL}/projects/${ref}/auth/config`,
-    {
-      body: JSON.stringify(settings),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'PATCH',
-    },
-    'set auth service config',
-  )
-
-  // Invalidate caches
-  invalidateCache('auth-service-config', ref)
-
-  return result
-}
-
-/**
- * Get auth service configuration
- */
-export async function getAuthServiceConfig(ref: string): Promise<AuthServiceConfig> {
-  return cachedFetch(
-    'auth-service-config',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<AuthServiceConfig>(`${API_BASE_URL}/projects/${ref}/auth/config`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.AUTH,
-  )
-}
-
-/**
- * Get API keys for a project
- * WARNING: Returns sensitive credentials (anon and service_role keys)
- * Phase 5B: Added for GoTrue API integration
- */
-export async function getAPIKeys(ref: string): Promise<APIKeysResponse> {
-  return cachedFetch(
-    'api-keys',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<APIKeysResponse>(`${API_BASE_URL}/projects/${ref}/api-keys`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.AUTH, // 10 min
-  )
-}
-
-// ============================================================================
-// INTEGRATIONS
-// ============================================================================
-
-/**
- * List all webhooks
- */
-export async function getWebhooks(ref: string): Promise<Webhook[]> {
-  return cachedFetch(
-    'webhooks',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Webhook[]>(`${API_BASE_URL}/projects/${ref}/integrations/webhooks`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.INTEGRATION,
-  )
-}
-
-/**
- * Create a webhook
- */
-export async function createWebhook(
-  ref: string,
-  url: string,
-  events: string[],
-  name?: string,
-): Promise<Webhook> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<Webhook>(
-    `${API_BASE_URL}/projects/${ref}/integrations/webhooks`,
-    {
-      body: JSON.stringify({
-        events,
-        name: name || 'Webhook',
-        url,
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'create webhook',
-  )
-
-  // Invalidate caches
-  invalidateCache('webhooks', ref)
-
-  return result
-}
-
-/**
- * Delete a webhook
- */
-export async function deleteWebhook(ref: string, webhookId: string): Promise<void> {
-  const headers = await getAuthHeader()
-  await enhancedFetch<void>(
-    `${API_BASE_URL}/projects/${ref}/integrations/webhooks/${webhookId}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'DELETE',
-    },
-    'delete webhook',
-  )
-
-  // Invalidate caches
-  invalidateCache('webhooks', ref)
-}
-
-/**
- * List available integrations
- */
-export async function getAvailableIntegrations(ref: string): Promise<Integration[]> {
-  return cachedFetch(
-    'integrations',
-    ref,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Integration[]>(`${API_BASE_URL}/projects/${ref}/integrations`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
-    },
-    CACHE_TTL.INTEGRATION,
-  )
-}
-
-/**
- * Setup an integration
- */
-export async function setupIntegration(
-  ref: string,
-  integrationName: string,
-  config: Record<string, unknown>,
-): Promise<Integration> {
-  const headers = await getAuthHeader()
-  const result = await enhancedFetch<Integration>(
-    `${API_BASE_URL}/projects/${ref}/integrations/${integrationName}/setup`,
-    {
-      body: JSON.stringify({ config }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    },
-    'setup integration',
-  )
-
-  // Invalidate caches
-  invalidateCache('integrations', ref)
-
-  return result
 }
 
 // ============================================================================
@@ -1731,59 +1144,25 @@ export async function setupIntegration(
 // ============================================================================
 
 /**
- * Get logs for a specific service
+ * Get logs
  */
 export async function getLogs(
   ref: string,
-  service: 'api' | 'auth' | 'edge-function' | 'postgres' | 'realtime' | 'storage',
+  service: 'auth' | 'database' | 'edge_function' | 'realtime' | 'storage',
+  options?: { limit?: number; offset?: number; search?: string },
 ): Promise<LogEntry[]> {
   const headers = await getAuthHeader()
-  const response = await enhancedFetch<{ logs: LogEntry[] }>(
-    `${API_BASE_URL}/projects/${ref}/logs/${service}`,
-    {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      method: 'GET',
-    },
-  )
+  let url = `${API_BASE_URL}/projects/${ref}/logs/${service}`
 
-  return response.logs || []
-}
-
-/**
- * Get function execution logs
- */
-export async function getFunctionLogs(
-  ref: string,
-  options?: { since?: string; until?: string },
-): Promise<FunctionLog[]> {
-  const headers = await getAuthHeader()
-  let url = `${API_BASE_URL}/projects/${ref}/logs/functions`
-
-  if (options?.since || options?.until) {
+  if (options?.search || options?.limit || options?.offset) {
     const params = new URLSearchParams()
-    if (options.since) params.append('since', options.since)
-    if (options.until) params.append('until', options.until)
+    if (options.search) params.append('search', options.search)
+    if (options.limit) params.append('limit', options.limit.toString())
+    if (options.offset) params.append('offset', options.offset.toString())
     url += `?${params.toString()}`
   }
 
-  return enhancedFetch<FunctionLog[]>(url, {
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
-    method: 'GET',
-  })
-}
-
-/**
- * Get specific function execution log
- */
-export async function getFunctionLog(ref: string, logId: string): Promise<FunctionLog> {
-  const headers = await getAuthHeader()
-  return enhancedFetch<FunctionLog>(`${API_BASE_URL}/projects/${ref}/logs/functions/${logId}`, {
+  return enhancedFetch<LogEntry[]>(url, {
     headers: {
       ...headers,
       'Content-Type': 'application/json',
@@ -1795,12 +1174,18 @@ export async function getFunctionLog(ref: string, logId: string): Promise<Functi
 /**
  * Get error logs
  */
-export async function getErrorLogs(ref: string, options?: { since?: string }): Promise<ErrorLog[]> {
+export async function getErrorLogs(
+  ref: string,
+  options?: { limit?: number; severity?: 'error' | 'critical' | 'warning' },
+): Promise<ErrorLog[]> {
   const headers = await getAuthHeader()
   let url = `${API_BASE_URL}/projects/${ref}/logs/errors`
 
-  if (options?.since) {
-    url += `?since=${options.since}`
+  if (options?.limit || options?.severity) {
+    const params = new URLSearchParams()
+    if (options.limit) params.append('limit', options.limit.toString())
+    if (options.severity) params.append('severity', options.severity)
+    url += `?${params.toString()}`
   }
 
   return enhancedFetch<ErrorLog[]>(url, {
@@ -1813,11 +1198,11 @@ export async function getErrorLogs(ref: string, options?: { since?: string }): P
 }
 
 /**
- * Get specific error log
+ * Get function logs
  */
-export async function getErrorLog(ref: string, errorId: string): Promise<ErrorLog> {
+export async function getFunctionLogs(ref: string, functionId: string): Promise<FunctionLog[]> {
   const headers = await getAuthHeader()
-  return enhancedFetch<ErrorLog>(`${API_BASE_URL}/projects/${ref}/logs/errors/${errorId}`, {
+  return enhancedFetch<FunctionLog[]>(`${API_BASE_URL}/projects/${ref}/functions/${functionId}/logs`, {
     headers: {
       ...headers,
       'Content-Type': 'application/json',
@@ -1827,11 +1212,11 @@ export async function getErrorLog(ref: string, errorId: string): Promise<ErrorLo
 }
 
 /**
- * Get API request logs
+ * Get API logs
  */
 export async function getAPILogs(
   ref: string,
-  options?: { endpoint?: string; since?: string },
+  options?: { since?: string; endpoint?: string },
 ): Promise<APILog[]> {
   const headers = await getAuthHeader()
   let url = `${API_BASE_URL}/projects/${ref}/logs/api`
@@ -1989,32 +1374,25 @@ export async function listBackups(
 }
 
 /**
- * Get details for a specific backup
+ * Get specific backup details
  */
 export async function getBackup(ref: string, backupId: string): Promise<Backup> {
-  return cachedFetch(
-    'backup',
-    `${ref}:${backupId}`,
-    async () => {
-      const headers = await getAuthHeader()
-      return enhancedFetch<Backup>(`${API_BASE_URL}/projects/${ref}/database/backups/${backupId}`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'GET',
-      })
+  const headers = await getAuthHeader()
+  return enhancedFetch<Backup>(`${API_BASE_URL}/projects/${ref}/database/backups/${backupId}`, {
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
     },
-    CACHE_TTL.BACKUP,
-  )
+    method: 'GET',
+  })
 }
 
 /**
- * Create an on-demand backup
+ * Create on-demand backup
  */
 export async function createBackup(ref: string, description?: string): Promise<Backup> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<Backup>(
+  const backup = await enhancedFetch<Backup>(
     `${API_BASE_URL}/projects/${ref}/database/backups`,
     {
       body: JSON.stringify({ description }),
@@ -2027,59 +1405,43 @@ export async function createBackup(ref: string, description?: string): Promise<B
     'create backup',
   )
 
-  // Invalidate caches
-  invalidateCache('backups')
+  // Invalidate cache
+  invalidateCache('backups', ref)
 
-  return result
+  return backup
 }
 
 /**
- * Delete a backup
+ * Delete backup
  */
 export async function deleteBackup(ref: string, backupId: string): Promise<void> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  await enhancedFetch(
     `${API_BASE_URL}/projects/${ref}/database/backups/${backupId}`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'DELETE',
     },
     'delete backup',
   )
 
   // Invalidate caches
-  invalidateCache('backups')
-  invalidateCache('backup', `${ref}:${backupId}`)
+  invalidateCache('backups', ref)
 }
 
 /**
- * Restore from a backup
+ * Restore from backup
  */
 export async function restoreFromBackup(ref: string, backupId: string): Promise<RestoreStatus> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<RestoreStatus>(
+  return enhancedFetch<RestoreStatus>(
     `${API_BASE_URL}/projects/${ref}/database/backups/${backupId}/restore`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'POST',
     },
     'restore from backup',
   )
-
-  // Invalidate all data caches
-  invalidateCache('projects')
-  invalidateCache('project', ref)
-  invalidateCache('tables')
-  invalidateCache('functions')
-  invalidateCache('branches')
-
-  return result
 }
 
 /**
@@ -2091,37 +1453,34 @@ export async function listBackupSchedules(ref: string): Promise<BackupSchedule[]
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<BackupSchedule[]>(`${API_BASE_URL}/projects/${ref}/database/backups/schedules`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
+      return enhancedFetch<BackupSchedule[]>(
+        `${API_BASE_URL}/projects/${ref}/database/backup-schedules`,
+        {
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          method: 'GET',
         },
-        method: 'GET',
-      })
+      )
     },
     CACHE_TTL.SCHEDULE,
   )
 }
 
 /**
- * Create a backup schedule
+ * Create backup schedule
  */
 export async function createBackupSchedule(
   ref: string,
   frequency: 'daily' | 'monthly' | 'weekly',
   retentionDays: number,
-  name?: string,
 ): Promise<BackupSchedule> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<BackupSchedule>(
-    `${API_BASE_URL}/projects/${ref}/database/backups/schedules`,
+  const schedule = await enhancedFetch<BackupSchedule>(
+    `${API_BASE_URL}/projects/${ref}/database/backup-schedules`,
     {
-      body: JSON.stringify({
-        enabled: true,
-        frequency,
-        name: name || `Automated ${frequency} backup`,
-        retention_days: retentionDays,
-      }),
+      body: JSON.stringify({ frequency, retention_days: retentionDays }),
       headers: {
         ...headers,
         'Content-Type': 'application/json',
@@ -2131,18 +1490,18 @@ export async function createBackupSchedule(
     'create backup schedule',
   )
 
-  // Invalidate caches
+  // Invalidate cache
   invalidateCache('backup-schedules', ref)
 
-  return result
+  return schedule
 }
 
 /**
- * Restore to a point in time (PITR)
+ * Point-in-time restore
  */
-export async function restoreToPointInTime(ref: string, timestamp: string): Promise<RestoreStatus> {
+export async function restoreFromPITR(ref: string, timestamp: string): Promise<RestoreStatus> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<RestoreStatus>(
+  return enhancedFetch<RestoreStatus>(
     `${API_BASE_URL}/projects/${ref}/database/backups/restore-pitr`,
     {
       body: JSON.stringify({ timestamp }),
@@ -2152,17 +1511,15 @@ export async function restoreToPointInTime(ref: string, timestamp: string): Prom
       },
       method: 'POST',
     },
-    'point-in-time restore',
+    'restore from PITR',
   )
+}
 
-  // Invalidate all data caches
-  invalidateCache('projects')
-  invalidateCache('project', ref)
-  invalidateCache('tables')
-  invalidateCache('functions')
-  invalidateCache('branches')
-
-  return result
+/**
+ * Alias for restoreFromPITR for backward compatibility
+ */
+export async function restoreToPointInTime(ref: string, timestamp: string): Promise<RestoreStatus> {
+  return restoreFromPITR(ref, timestamp)
 }
 
 // ============================================================================
@@ -2170,7 +1527,7 @@ export async function restoreToPointInTime(ref: string, timestamp: string): Prom
 // ============================================================================
 
 /**
- * List all read replicas for a project
+ * List database replicas
  */
 export async function listDatabaseReplicas(ref: string): Promise<DatabaseReplica[]> {
   return cachedFetch(
@@ -2178,34 +1535,33 @@ export async function listDatabaseReplicas(ref: string): Promise<DatabaseReplica
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<DatabaseReplica[]>(`${API_BASE_URL}/projects/${ref}/database/replicas`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
+      return enhancedFetch<DatabaseReplica[]>(
+        `${API_BASE_URL}/projects/${ref}/database/replicas`,
+        {
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          method: 'GET',
         },
-        method: 'GET',
-      })
+      )
     },
     CACHE_TTL.REPLICA,
   )
 }
 
 /**
- * Create a read replica
+ * Create database replica
  */
 export async function createDatabaseReplica(
   ref: string,
   location: string,
-  name?: string,
 ): Promise<DatabaseReplica> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<DatabaseReplica>(
+  const replica = await enhancedFetch<DatabaseReplica>(
     `${API_BASE_URL}/projects/${ref}/database/replicas`,
     {
-      body: JSON.stringify({
-        location,
-        name: name || `replica-${location}`,
-      }),
+      body: JSON.stringify({ location }),
       headers: {
         ...headers,
         'Content-Type': 'application/json',
@@ -2215,24 +1571,21 @@ export async function createDatabaseReplica(
     'create replica',
   )
 
-  // Invalidate caches
+  // Invalidate cache
   invalidateCache('replicas', ref)
 
-  return result
+  return replica
 }
 
 /**
- * Delete a read replica
+ * Delete database replica
  */
 export async function deleteDatabaseReplica(ref: string, replicaId: string): Promise<void> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  await enhancedFetch(
     `${API_BASE_URL}/projects/${ref}/database/replicas/${replicaId}`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'DELETE',
     },
     'delete replica',
@@ -2275,7 +1628,7 @@ export async function setDatabaseConfig(
 // ============================================================================
 
 /**
- * List network restrictions (IP whitelist)
+ * List network IP restrictions
  */
 export async function listNetworkRestrictions(ref: string): Promise<NetworkRestriction[]> {
   return cachedFetch(
@@ -2299,7 +1652,7 @@ export async function listNetworkRestrictions(ref: string): Promise<NetworkRestr
 }
 
 /**
- * Add network restriction (IP whitelist)
+ * Add network IP restriction
  */
 export async function addNetworkRestriction(
   ref: string,
@@ -2307,7 +1660,7 @@ export async function addNetworkRestriction(
   description?: string,
 ): Promise<NetworkRestriction> {
   const headers = await getAuthHeader()
-  const result = await enhancedFetch<NetworkRestriction>(
+  const restriction = await enhancedFetch<NetworkRestriction>(
     `${API_BASE_URL}/projects/${ref}/network/restrictions`,
     {
       body: JSON.stringify({ cidr, description }),
@@ -2320,30 +1673,27 @@ export async function addNetworkRestriction(
     'add network restriction',
   )
 
-  // Invalidate caches
+  // Invalidate cache
   invalidateCache('network-restrictions', ref)
 
-  return result
+  return restriction
 }
 
 /**
- * Remove network restriction
+ * Remove network IP restriction
  */
 export async function removeNetworkRestriction(ref: string, restrictionId: string): Promise<void> {
   const headers = await getAuthHeader()
-  await enhancedFetch<void>(
+  await enhancedFetch(
     `${API_BASE_URL}/projects/${ref}/network/restrictions/${restrictionId}`,
     {
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'DELETE',
     },
     'remove network restriction',
   )
 
-  // Invalidate caches
+  // Invalidate cache
   invalidateCache('network-restrictions', ref)
 }
 
@@ -2356,13 +1706,16 @@ export async function listSecurityPolicies(ref: string): Promise<SecurityPolicy[
     ref,
     async () => {
       const headers = await getAuthHeader()
-      return enhancedFetch<SecurityPolicy[]>(`${API_BASE_URL}/projects/${ref}/security/policies`, {
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
+      return enhancedFetch<SecurityPolicy[]>(
+        `${API_BASE_URL}/projects/${ref}/security/policies`,
+        {
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          method: 'GET',
         },
-        method: 'GET',
-      })
+      )
     },
     CACHE_TTL.SECURITY,
   )
@@ -2373,15 +1726,161 @@ export async function listSecurityPolicies(ref: string): Promise<SecurityPolicy[
  */
 export async function runSecurityAudit(ref: string): Promise<SecurityAudit> {
   const headers = await getAuthHeader()
-  return enhancedFetch<SecurityAudit>(`${API_BASE_URL}/projects/${ref}/security/audit`, {
+  return enhancedFetch<SecurityAudit>(
+    `${API_BASE_URL}/projects/${ref}/security/audit`,
+    {
+      headers,
+      method: 'POST',
+    },
+    'run security audit',
+  )
+}
+
+// ============================================================================
+// STORAGE
+// ============================================================================
+
+/**
+ * List storage buckets
+ * Note: This uses the project URL, not the management API
+ */
+export async function getStorageBuckets(ref: string): Promise<StorageBucket[]> {
+  return cachedFetch(
+    'storage-buckets',
+    ref,
+    async () => {
+      const headers = await getAuthHeader()
+      const projectUrl = getProjectUrl(ref)
+
+      return enhancedFetch<StorageBucket[]>(`${projectUrl}/storage/v1/bucket`, {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        method: 'GET',
+      })
+    },
+    CACHE_TTL.STORAGE,
+  )
+}
+
+/**
+ * Get specific storage bucket
+ * Note: This uses the project URL, not the management API
+ */
+export async function getStorageBucket(ref: string, bucketId: string): Promise<StorageBucket> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+
+  return enhancedFetch<StorageBucket>(`${projectUrl}/storage/v1/bucket/${bucketId}`, {
     headers: {
       ...headers,
       'Content-Type': 'application/json',
     },
-    method: 'POST',
+    method: 'GET',
   })
 }
 
+/**
+ * Create storage bucket
+ * Note: This uses the project URL, not the management API
+ */
+export async function createStorageBucket(
+  ref: string,
+  name: string,
+  isPublic: boolean,
+): Promise<StorageBucket> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+
+  const bucket = await enhancedFetch<StorageBucket>(
+    `${projectUrl}/storage/v1/bucket`,
+    {
+      body: JSON.stringify({
+        id: name,
+        name,
+        public: isPublic,
+      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'create storage bucket',
+  )
+
+  // Invalidate cache
+  invalidateCache('storage-buckets', ref)
+
+  return bucket
+}
+
+/**
+ * Delete storage bucket
+ * Note: This uses the project URL, not the management API
+ */
+export async function deleteStorageBucket(ref: string, bucketId: string): Promise<void> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+
+  await enhancedFetch(
+    `${projectUrl}/storage/v1/bucket/${bucketId}`,
+    {
+      headers,
+      method: 'DELETE',
+    },
+    'delete storage bucket',
+  )
+
+  // Invalidate cache
+  invalidateCache('storage-buckets', ref)
+}
+
+/**
+ * Get storage bucket policies
+ * Note: This uses the project URL, not the management API
+ */
+export async function getStoragePolicies(ref: string, bucketId: string): Promise<StoragePolicy[]> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+
+  return enhancedFetch<StoragePolicy[]>(`${projectUrl}/storage/v1/bucket/${bucketId}/policies`, {
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    method: 'GET',
+  })
+}
+
+/**
+ * Set storage bucket policies
+ * Note: This uses the project URL, not the management API
+ */
+export async function setStoragePolicies(
+  ref: string,
+  bucketId: string,
+  policies: Partial<StoragePolicy>[],
+): Promise<StoragePolicy[]> {
+  const headers = await getAuthHeader()
+  const projectUrl = getProjectUrl(ref)
+
+  return enhancedFetch<StoragePolicy[]>(
+    `${projectUrl}/storage/v1/bucket/${bucketId}/policies`,
+    {
+      body: JSON.stringify({ policies }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    },
+    'set storage policies',
+  )
+}
+
+// ============================================================================
 // Export for backward compatibility
 export class SupabaseAPIWrapper {
   private accessToken: null | string = null

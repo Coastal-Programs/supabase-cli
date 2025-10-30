@@ -2,7 +2,7 @@ import { Args } from '@oclif/core'
 
 import { BaseCommand } from '../../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../../base-flags'
-import { getStorageBuckets } from '../../../supabase'
+import { type StorageBucket, getStorageBuckets } from '../../../supabase'
 
 export default class StorageBucketsList extends BaseCommand {
   static aliases = ['storage:buckets:ls']
@@ -51,7 +51,7 @@ export default class StorageBucketsList extends BaseCommand {
         this.divider()
         this.info(`Total: ${buckets.length} bucket${buckets.length === 1 ? '' : 's'}`)
 
-        const publicCount = buckets.filter((b) => b.public).length
+        const publicCount = buckets.filter((b: StorageBucket) => b.public).length
         const privateCount = buckets.length - publicCount
 
         if (publicCount > 0) {

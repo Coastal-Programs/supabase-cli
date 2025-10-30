@@ -22,7 +22,7 @@ Production-ready Supabase Management API CLI built for AI agents, automation, an
 
 ## Features
 
-- **34 Working Commands** across 6 major categories
+- **28 Working Commands** across 6 major categories
 - **SQL-Based Operations** for database metadata (14 pre-built queries)
 - **Production-Ready Infrastructure**
   - LRU cache with TTL support
@@ -112,10 +112,10 @@ supabase-cli db:query "SELECT version()" --project your-project-ref
 - `db:config:set` - Set database configuration
 - `db:webhooks:list` - List database webhooks
 
-### Backups (2)
+### Backups (1)
 
 - `backup:list` - List all backups
-- `backup:get <id>` - Get backup details
+- `backup:pitr:restore` - Point-in-time restore (requires PITR enabled)
 
 ### Edge Functions (3)
 
@@ -130,8 +130,6 @@ supabase-cli db:query "SELECT version()" --project your-project-ref
 
 ### Security (2)
 
-- `security:restrictions:list` - List IP restrictions
-- `security:audit` - Run security audit with color-coded severity
 
 ### Storage (4)
 
@@ -207,12 +205,6 @@ supabase-cli db:connections --project my-project-ref
 
 ```bash
 # Run security audit
-supabase-cli security:audit --project my-project-ref
-
-# Check IP restrictions
-supabase-cli security:restrictions:list --project my-project-ref
-
-# Check read-only mode
 supabase-cli monitoring:readonly --project my-project-ref
 ```
 
@@ -436,7 +428,7 @@ MIT - see [LICENSE](LICENSE) file for details
 
 ## What's New in v0.1.0
 
-- 34 production-ready commands across 6 categories
+- 28 production-ready commands across 6 categories
 - SQL-based database metadata commands (14 pre-built queries)
 - Request deduplication for concurrent operations
 - Cascading cache invalidation

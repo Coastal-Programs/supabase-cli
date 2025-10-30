@@ -2,7 +2,7 @@ import { Args } from '@oclif/core'
 
 import { BaseCommand } from '../../../base-command'
 import { AutomationFlags, OutputFormatFlags, ProjectFlags } from '../../../base-flags'
-import { getStoragePolicies } from '../../../supabase'
+import { type StoragePolicy, getStoragePolicies } from '../../../supabase'
 
 export default class StoragePoliciesList extends BaseCommand {
   static aliases = ['storage:policies:ls']
@@ -55,7 +55,7 @@ export default class StoragePoliciesList extends BaseCommand {
         this.info(`Total: ${policies.length} polic${policies.length === 1 ? 'y' : 'ies'}`)
 
         const actionCounts = policies.reduce(
-          (acc, p) => {
+          (acc: Record<string, number>, p: StoragePolicy) => {
             acc[p.action] = (acc[p.action] || 0) + 1
             return acc
           },
