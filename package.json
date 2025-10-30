@@ -95,7 +95,7 @@
     "eslint-config-oclif-typescript": "^3.0.8",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.1.2",
-    "mocha": "^10.2.0",
+    "mocha": "^11.7.4",
     "nyc": "^15.1.0",
     "oclif": "^4.22.38",
     "pkg": "^5.8.1",
