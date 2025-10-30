@@ -1,15 +1,20 @@
+<p align="center">
+  <img width="800" src="https://user-images.githubusercontent.com/placeholder.png#gh-light-mode-only" alt="Supabase CLI">
+</p>
+
+<pre align="center">
+<span style="color: #3ECF8E;">███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
+██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
+███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║
+╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║
+███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
+╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝</span>
+</pre>
+
 <div align="center">
 
-```diff
-+███████╗██╗   ██╗██████╗  █████╗ ██████╗  █████╗ ███████╗███████╗     ██████╗██╗     ██╗
-+██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝██║     ██║
-+███████╗██║   ██║██████╔╝███████║██████╔╝███████║███████╗█████╗      ██║     ██║     ██║
-+╚════██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝      ██║     ██║     ██║
-+███████║╚██████╔╝██║     ██║  ██║██████╔╝██║  ██║███████║███████╗    ╚██████╗███████╗██║
-+╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝╚══════╝╚═╝
-```
-
 [![CI/CD Pipeline](https://github.com/Coastal-Programs/supabase-cli/workflows/CI/badge.svg)](https://github.com/Coastal-Programs/supabase-cli/actions)
+[![codecov](https://codecov.io/gh/Coastal-Programs/supabase-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/Coastal-Programs/supabase-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue)](https://www.typescriptlang.org/)
