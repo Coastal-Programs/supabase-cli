@@ -85,7 +85,7 @@
     "@types/node": "^20.10.6",
     "@types/sinon": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^6.17.0",
+    "@typescript-eslint/parser": "^8.46.2",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chai": "^4.3.10",
